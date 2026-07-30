@@ -189,13 +189,15 @@ async def callback_pay_confirm(callback: types.CallbackQuery) -> None:
     await callback.answer("✅ To'lov tasdiqlandi!")
 
     try:
+        await db.deduct_balance(payment["tg_id"], payment["amount"])
         await callback.bot.send_message(
             payment["tg_id"],
-            f"🎉 <b>To'lovingiz tasdiqlandi!</b>\n\n"
+            f"🎉 <b>To'lovingiz amalga oshirildi!</b>\n\n"
             f"💰 <b>{payment['amount']:,} so'm</b> kartangizga o'tkazildi.\n"
             f"💳 Karta: <code>{utils.mask_card(payment['card_number'])}</code>\n\n"
-            f"🙏 Ovoz berganligi uchun rahmat!\n"
-            f"Do'stlaringizni ham taklif qiling 👥",
+            f"📊 Joriy balans: <b>0 so'm</b>\n\n"
+            "🙏 Ovoz berganligi uchun rahmat!\n"
+            "Do'stlaringizni ham taklif qiling 👥",
         )
     except Exception as e:
         logger.warning("Foydalanuvchiga xabar yuborilmadi: %s", e)

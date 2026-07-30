@@ -88,13 +88,13 @@ async def _begin_vote(message: types.Message, state: FSMContext, user: types.Use
 
 
 @router.message(VoteState.waiting_for_phone, F.contact)
-async def process_phone_contact(message: types.Message, state: FSMContext) -> None:
+async def process_phone_contact(message: types.Message, state: FSMContext, session: aiohttp.ClientSession) -> None:
     phone = utils.clean_phone_number(message.contact.phone_number)
-    await _process_phone_number(message, state, phone)
+    await _process_phone_number(message, state, phone, session)
 
 
 @router.message(VoteState.waiting_for_phone, F.text)
-async def process_phone_text(message: types.Message, state: FSMContext) -> None:
+async def process_phone_text(message: types.Message, state: FSMContext, session: aiohttp.ClientSession) -> None:
     if message.text in ("🔙 Orqaga", "❌ Bekor qilish"):
         await state.clear()
         await message.answer("🏠 Bosh sahifa", reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)))
@@ -124,16 +124,15 @@ async def process_phone_text(message: types.Message, state: FSMContext) -> None:
             reply_markup=kb.phone_keyboard(),
         )
         return
-    await _process_phone_number(message, state, phone)
+    await _process_phone_number(message, state, phone, session)
 
 
-async def _process_phone_number(message: types.Message, state: FSMContext, phone: str) -> None:
+async def _process_phone_number(message: types.Message, state: FSMContext, phone: str, session: aiohttp.ClientSession) -> None:
     await state.update_data(phone_number=phone)
     status_msg = await message.answer(
         f"✅ Telefon: <code>+{phone}</code>\n\n⏳ Captcha yuklanmoqda...",
         reply_markup=ReplyKeyboardRemove(),
     )
-    session = message.bot.dispatcher.workflow_data.get("session")
     if not session:
         await status_msg.edit_text("❌ HTTP sessiya xatosi. /start bosing.")
         await state.clear()
@@ -288,7 +287,7 @@ async def submit_vote(session: aiohttp.ClientSession, access_token: str, initiat
 
 
 @router.message(VoteState.waiting_for_captcha)
-async def process_captcha(message: types.Message, state: FSMContext) -> None:
+async def process_captcha(message: types.Message, state: FSMContext, session: aiohttp.ClientSession) -> None:
     if message.text == "❌ Bekor qilish":
         await state.clear()
         await message.answer("🏠 Bosh sahifa", reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)))
@@ -304,7 +303,6 @@ async def process_captcha(message: types.Message, state: FSMContext) -> None:
     captcha_key = data["captcha_key"]
     status_msg = await message.answer("⏳ SMS yuborilmoqda...")
 
-    session = message.bot.dispatcher.workflow_data.get("session")
     if not session:
         await status_msg.edit_text("❌ Tizim sessiyasida xatolik. /start bosing.")
         await state.clear()
@@ -339,7 +337,7 @@ async def process_captcha(message: types.Message, state: FSMContext) -> None:
 
 
 @router.message(VoteState.waiting_for_otp)
-async def process_otp(message: types.Message, state: FSMContext) -> None:
+async def process_otp(message: types.Message, state: FSMContext, session: aiohttp.ClientSession) -> None:
     if message.text == "❌ Bekor qilish":
         await state.clear()
         await message.answer("🏠 Bosh sahifa", reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)))
@@ -354,7 +352,6 @@ async def process_otp(message: types.Message, state: FSMContext) -> None:
     phone_number = data["phone_number"]
     status_msg = await message.answer("⏳ Kod tekshirilmoqda...")
 
-    session = message.bot.dispatcher.workflow_data.get("session")
     if not session:
         await status_msg.edit_text("❌ Tizim xatosi. /start bosing.")
         await state.clear()
@@ -374,12 +371,15 @@ async def process_otp(message: types.Message, state: FSMContext) -> None:
 
         await db.add_vote(tg_id=message.from_user.id, phone=phone_number)
         await db.set_user_phone(message.from_user.id, phone_number)
-        logger.info("Ovoz berildi | tg_id=%d | phone=%s", message.from_user.id, phone_number)
+        await db.add_balance(message.from_user.id, config.REWARD_AMOUNT)
+        new_balance = await db.get_balance(message.from_user.id)
+        logger.info("Ovoz berildi | tg_id=%d | phone=%s | new_balance=%d", message.from_user.id, phone_number, new_balance)
 
         await status_msg.edit_text(
             "🎉 <b>Tabriklaymiz!</b>\n\n"
             f"✅ <a href='{config.INITIATIVE_URL}'>Loyiha</a>ga ovoz muvaffaqiyatli berildi!\n\n"
-            f"💰 <b>Mukofot: {config.REWARD_AMOUNT:,} so'm</b>\n\n"
+            f"💰 <b>{config.REWARD_AMOUNT:,} so'm</b> hisobingizga qo'shildi!\n"
+            f"📊 Joriy balansingiz: <b>{new_balance:,} so'm</b>\n\n"
             "💳 Pul olish uchun karta raqamingizni kiriting:\n"
             "<i>(16 ta raqam, bo'sh joylarsiz)</i>",
         )

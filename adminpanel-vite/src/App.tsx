@@ -7,6 +7,7 @@ import { StatsGrid } from "./components/StatsGrid";
 import { TabNavigation } from "./components/TabNavigation";
 import { PaymentCard } from "./components/PaymentCard";
 import { RejectModal } from "./components/RejectModal";
+import { BulkActionBar } from "./components/BulkActionBar";
 
 function Spinner() {
   return (
@@ -84,7 +85,13 @@ function App() {
       setSubmitting(true);
       triggerHaptic("warning");
       try {
-        await actionPayment(id, "rejected", note);
+        if (id === -1) {
+          // Bulk reject
+          await Promise.all(selectedIds.map((x) => actionPayment(x, "rejected", note)));
+          setSelectedIds([]);
+        } else {
+          await actionPayment(id, "rejected", note);
+        }
         setRejectModal({ isOpen: false, paymentId: null });
         await refreshAll();
       } catch {
@@ -93,8 +100,26 @@ function App() {
         setSubmitting(false);
       }
     },
-    [actionPayment, triggerHaptic, refreshAll]
+    [actionPayment, triggerHaptic, refreshAll, selectedIds]
   );
+
+  const handleBulkApprove = useCallback(async () => {
+    setSubmitting(true);
+    triggerHaptic("success");
+    try {
+      await Promise.all(selectedIds.map((id) => actionPayment(id, "paid")));
+      setSelectedIds([]);
+      await refreshAll();
+    } catch {
+      triggerHaptic("error");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [actionPayment, selectedIds, triggerHaptic, refreshAll]);
+
+  const handleBulkReject = useCallback(() => {
+    setRejectModal({ isOpen: true, paymentId: -1 }); // -1 indicates bulk reject
+  }, []);
 
   const openRejectModal = useCallback((id: number) => {
     setRejectModal({ isOpen: true, paymentId: id });
@@ -128,7 +153,7 @@ function App() {
       </div>
 
       {/* Main content */}
-      <div className="max-w-xl mx-auto px-4 pt-4">
+      <div className="max-w-xl mx-auto px-4 pt-4 pb-20">
         {/* Error banner */}
         {error && (
           <div className="mb-4 px-4 py-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs flex items-center gap-2">
@@ -171,6 +196,14 @@ function App() {
           </>
         )}
       </div>
+
+      {/* Bulk action bar */}
+      <BulkActionBar
+        selectedCount={selectedIds.length}
+        onBulkApprove={handleBulkApprove}
+        onBulkReject={handleBulkReject}
+        submitting={submitting}
+      />
 
       {/* Reject Modal */}
       <RejectModal

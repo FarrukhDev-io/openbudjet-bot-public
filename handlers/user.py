@@ -109,6 +109,36 @@ async def cmd_help(message: types.Message) -> None:
     )
 
 
+@router.message(F.text == "💰 Balansim")
+async def cmd_balance(message: types.Message) -> None:
+    user_id = message.from_user.id
+    balance = await db.get_balance(user_id)
+    payment = await db.get_user_payment(user_id)
+
+    if payment:
+        status_map = {
+            "pending": "⏳ To'lov kutilmoqda",
+            "paid": "✅ To'lov amalga oshirildi",
+            "rejected": f"❌ Rad etildi: {payment.get('admin_note', '') or ''}",
+        }
+        payment_status = status_map.get(payment["status"], payment["status"])
+        payment_text = (
+            f"\n\n💳 <b>So'nggi to'lov:</b>\n"
+            f"  Karta: <code>{payment['card_number'][:4]} **** **** {payment['card_number'][-4:]}</code>\n"
+            f"  Holat: {payment_status}"
+        )
+    else:
+        payment_text = "\n\n💳 Hali to'lov so'rovi yo'q"
+
+    await message.answer(
+        f"💰 <b>Hisobingiz</b>\n\n"
+        f"📊 Joriy balans: <b>{balance:,} so'm</b>\n"
+        f"🎁 Ovoz uchun mukofot: <b>{config.REWARD_AMOUNT:,} so'm</b>"
+        f"{payment_text}",
+        reply_markup=kb.main_keyboard(is_user_admin=is_admin(user_id)),
+    )
+
+
 @router.message(F.text == "📞 Bog'lanish")
 async def cmd_contact(message: types.Message) -> None:
     admin_tg = config.ADMIN_TELEGRAM.lstrip("@")
@@ -126,10 +156,8 @@ async def cmd_contact(message: types.Message) -> None:
 
 
 @router.message(F.text == "📋 Loyiha haqida")
-async def cmd_initiative_info(message: types.Message) -> None:
+async def cmd_initiative_info(message: types.Message, session: aiohttp.ClientSession) -> None:
     msg = await message.answer("⏳ Ma'lumot yuklanmoqda...")
-    # Retrieve single reusable HTTP session from Dispatcher workflow_data
-    session = message.bot.dispatcher.workflow_data.get("session")
     if not session:
         await msg.edit_text("❌ HTTP sessiyani yuklashda xatolik. Keyinroq qayta urinib ko'ring.")
         return

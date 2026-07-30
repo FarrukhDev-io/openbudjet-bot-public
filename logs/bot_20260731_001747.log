@@ -1,0 +1,49 @@
+Traceback (most recent call last):
+  File "/home/farrukh/Frontend/openbudjet-bot/bot.py", line 60, in <module>
+    asyncio.run(main())
+    ~~~~~~~~~~~^^^^^^^^
+  File "/usr/lib/python3.14/asyncio/runners.py", line 205, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.14/asyncio/runners.py", line 128, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/home/farrukh/Frontend/openbudjet-bot/bot.py", line 25, in main
+    await db.init_db_pool()
+  File "/home/farrukh/Frontend/openbudjet-bot/database/connection.py", line 14, in init_db_pool
+    db_pool = await asyncpg.create_pool(dsn=DATABASE_URL)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/pool.py", line 439, in _async__init__
+    await self._initialize()
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/pool.py", line 466, in _initialize
+    await first_ch.connect()
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/pool.py", line 153, in connect
+    self._con = await self._pool._get_new_connection()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/pool.py", line 538, in _get_new_connection
+    con = await self._connect(
+          ^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connection.py", line 2443, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<22 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connect_utils.py", line 1218, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connect_utils.py", line 1054, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connect_utils.py", line 1102, in __connect_addr
+    await connected
+asyncpg.exceptions.InvalidCatalogNameError: database "openbudget" does not exist

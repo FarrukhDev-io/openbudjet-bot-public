@@ -1,6 +1,9 @@
 import os
 import asyncpg
 from typing import Optional
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/openbudget")
 
@@ -57,8 +60,13 @@ async def init_db() -> None:
                 ref_by             BIGINT,
                 joined_at          VARCHAR(50) DEFAULT TO_CHAR(CURRENT_TIMESTAMP, 'YYYY-MM-DD HH24:MI:SS'),
                 voted              INTEGER DEFAULT 0,
-                vote_confirmed     INTEGER DEFAULT 0
+                vote_confirmed     INTEGER DEFAULT 0,
+                balance            BIGINT DEFAULT 0
             )
+        """)
+
+        await conn.execute("""
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS balance BIGINT DEFAULT 0
         """)
 
         # Ovozlar jadvali

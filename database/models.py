@@ -72,6 +72,39 @@ async def set_vote_confirmed(tg_id: int) -> None:
         )
 
 
+async def get_balance(tg_id: int) -> int:
+    """Foydalanuvchi balansini olish"""
+    async with get_conn() as conn:
+        val = await conn.fetchval(
+            "SELECT balance FROM users WHERE tg_id = $1", tg_id
+        )
+        return val or 0
+
+async def add_balance(tg_id: int, amount: int) -> int:
+    """Foydalanuvchi balansiga pul qo'shish, yangi balansni qaytaradi"""
+    async with get_conn() as conn:
+        new_balance = await conn.fetchval("""
+            UPDATE users SET balance = balance + $1
+            WHERE tg_id = $2
+            RETURNING balance
+        """, amount, tg_id)
+        return new_balance or 0
+
+async def deduct_balance(tg_id: int, amount: int) -> bool:
+    """Balansdan pul ayirish. Yetarli bo'lmasa False qaytaradi"""
+    async with get_conn() as conn:
+        current = await conn.fetchval(
+            "SELECT balance FROM users WHERE tg_id = $1", tg_id
+        )
+        if (current or 0) < amount:
+            return False
+        await conn.execute("""
+            UPDATE users SET balance = balance - $1
+            WHERE tg_id = $2
+        """, amount, tg_id)
+        return True
+
+
 # ==============================================================================
 # VOTES
 # ==============================================================================
