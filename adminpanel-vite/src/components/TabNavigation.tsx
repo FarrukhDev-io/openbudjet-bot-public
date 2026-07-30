@@ -1,5 +1,6 @@
 import React from "react";
 import type { TabType } from "../types";
+import { FiBarChart2, FiClock, FiCheckCircle, FiXCircle } from "react-icons/fi";
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -7,13 +8,17 @@ interface TabNavigationProps {
   pendingCount: number;
 }
 
-type TabConfig = { id: TabType; label: string; emoji: string };
+type TabConfig = {
+  id: TabType;
+  label: string;
+  icon: React.ReactNode;
+};
 
 const tabs: TabConfig[] = [
-  { id: "stats",    emoji: "📊", label: "Statistika" },
-  { id: "pending",  emoji: "⏳", label: "Kutilmoqda" },
-  { id: "paid",     emoji: "✅", label: "To'langan" },
-  { id: "rejected", emoji: "❌", label: "Rad etilgan" },
+  { id: "stats",    icon: <FiBarChart2 />,   label: "Statistika" },
+  { id: "pending",  icon: <FiClock />,        label: "Kutilmoqda" },
+  { id: "paid",     icon: <FiCheckCircle />,  label: "To'langan" },
+  { id: "rejected", icon: <FiXCircle />,      label: "Rad etilgan" },
 ];
 
 export const TabNavigation: React.FC<TabNavigationProps> = ({
@@ -41,7 +46,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
               : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/40",
           ].join(" ")}
         >
-          <span className="text-sm">{tab.emoji}</span>
+          <span className="text-sm">{tab.icon}</span>
           <span className="leading-none">{label}</span>
           {isActive && (
             <span className="block w-4 h-0.5 rounded-full bg-indigo-500 mt-0.5" />

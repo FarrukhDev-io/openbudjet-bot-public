@@ -1,4 +1,5 @@
 import React from "react";
+import { FiClock, FiCheckCircle, FiXCircle } from "react-icons/fi";
 
 type BadgeStatus = "pending" | "paid" | "rejected";
 
@@ -6,26 +7,29 @@ interface BadgeProps {
   status: BadgeStatus;
 }
 
-const config: Record<BadgeStatus, { label: string; classes: string; emoji: string }> = {
+const config: Record<
+  BadgeStatus,
+  { label: string; classes: string; icon: React.ReactNode }
+> = {
   pending: {
-    emoji: "⏳",
+    icon: <FiClock />,
     label: "Kutilmoqda",
     classes: "bg-amber-500/15 text-amber-400 border border-amber-500/30",
   },
   paid: {
-    emoji: "✅",
+    icon: <FiCheckCircle />,
     label: "To'langan",
     classes: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30",
   },
   rejected: {
-    emoji: "❌",
+    icon: <FiXCircle />,
     label: "Rad etildi",
     classes: "bg-rose-500/15 text-rose-400 border border-rose-500/30",
   },
 };
 
 export const Badge: React.FC<BadgeProps> = ({ status }) => {
-  const { emoji, label, classes } = config[status];
+  const { icon, label, classes } = config[status];
   return (
     <span
       className={[
@@ -33,7 +37,7 @@ export const Badge: React.FC<BadgeProps> = ({ status }) => {
         classes,
       ].join(" ")}
     >
-      <span>{emoji}</span>
+      <span className="text-[10px]">{icon}</span>
       {label}
     </span>
   );

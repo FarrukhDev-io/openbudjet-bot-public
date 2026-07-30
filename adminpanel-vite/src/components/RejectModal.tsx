@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiCheck, FiX } from "react-icons/fi";
+import { FiCheck, FiX, FiAlertTriangle } from "react-icons/fi";
 
 interface RejectModalProps {
   isOpen: boolean;
@@ -47,8 +47,14 @@ export const RejectModal: React.FC<RejectModalProps> = ({
         className="relative z-10 w-full max-w-md bg-slate-800 border border-slate-700 shadow-2xl rounded-t-3xl sm:rounded-3xl p-6 mx-0 sm:mx-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base font-extrabold text-slate-100 mb-1">❌ Rad etish sababi</h2>
-        <p className="text-xs text-slate-400 mb-4">Foydalanuvchiga yuboriladi</p>
+        {/* Title */}
+        <div className="flex items-center gap-2 mb-1">
+          <FiX className="text-rose-400 text-lg" />
+          <h2 className="text-base font-extrabold text-slate-100">Rad etish sababi</h2>
+        </div>
+        <p className="text-xs text-slate-400 mb-4 pl-6">
+          Sabab foydalanuvchiga Telegram orqali yuboriladi.
+        </p>
 
         <textarea
           autoFocus
@@ -64,7 +70,10 @@ export const RejectModal: React.FC<RejectModalProps> = ({
         />
 
         {error && (
-          <p className="text-rose-400 text-xs mt-1.5">{error}</p>
+          <p className="flex items-center gap-1.5 text-rose-400 text-xs mt-1.5">
+            <FiAlertTriangle className="shrink-0" />
+            {error}
+          </p>
         )}
 
         <div className="flex gap-3 mt-4">
@@ -73,14 +82,16 @@ export const RejectModal: React.FC<RejectModalProps> = ({
             className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 active:scale-[0.98] transition-all
               text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <FiCheck /> Rad etish
+            <FiCheck className="text-sm" />
+            Rad etish
           </button>
           <button
             onClick={onClose}
             className="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 active:scale-[0.98] transition-all
               text-slate-100 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <FiX /> Bekor qilish
+            <FiX className="text-sm" />
+            Bekor qilish
           </button>
         </div>
       </div>
