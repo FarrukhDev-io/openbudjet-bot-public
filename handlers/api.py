@@ -2,16 +2,16 @@ import os
 import logging
 from aiohttp import web
 from aiogram import Bot
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 import config
 import database as db
-from utils.validation import mask_card
+from utils.validation import generate_p2p_links, mask_card
+from utils.helpers import is_admin
+
 
 logger = logging.getLogger(__name__)
 
-
-def is_admin(user_id: int) -> bool:
-    return user_id in config.ADMIN_IDS or user_id == config.SUPER_ADMIN_ID
 
 
 async def api_stats(request: web.Request) -> web.Response:
@@ -56,11 +56,18 @@ async def api_payment_action(request: web.Request) -> web.Response:
     bot = request.app['bot']
     try:
         if action == "paid":
+            links = generate_p2p_links(payment["card_number"], payment["amount"])
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="💳 Click P2P", url=links["click"]),
+                InlineKeyboardButton(text="💳 Payme P2P", url=links["payme"]),
+                InlineKeyboardButton(text="💳 Uzum P2P", url=links["uzum"]),
+            ]])
             await bot.send_message(
                 payment["tg_id"],
                 f"🎉 <b>To'lovingiz tasdiqlandi!</b>\n\n"
                 f"💰 <b>{payment['amount']:,} so'm</b> kartangizga o'tkazildi.\n"
                 f"💳 Karta: <code>{mask_card(payment['card_number'])}</code>",
+                reply_markup=keyboard,
             )
         else:
             await bot.send_message(

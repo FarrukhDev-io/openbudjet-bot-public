@@ -4,7 +4,7 @@ import aiohttp
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
+from database.fsm_storage import PgFSMStorage
 
 import config
 import database as db
@@ -33,7 +33,7 @@ async def main():
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
 
-    dp = Dispatcher(storage=MemoryStorage())
+    dp = Dispatcher(storage=PgFSMStorage())
     
     # Store dynamic data for handlers
     dp["session"] = http_session

@@ -9,15 +9,18 @@ export interface Stats {
   total_paid_sum: number;
 }
 
-export interface PaymentRequest {
+export interface Payment {
   id: number;
   tg_id: number;
   phone: string;
   full_name: string;
   card_number: string;
   amount: number;
-  status: string;
+  status: "pending" | "paid" | "rejected";
   requested_at: string;
-  username?: string;
-  u_full_name?: string;
+  processed_at: string | null;
+  admin_note: string | null;
+  username: string | null;
 }
+
+export type TabType = "stats" | "pending" | "paid" | "rejected";

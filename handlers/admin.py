@@ -8,6 +8,8 @@ import config
 import database as db
 import keyboards as kb
 import utils
+from utils.helpers import is_admin
+
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -16,9 +18,6 @@ router = Router()
 class AdminState(StatesGroup):
     waiting_reject_note = State()
 
-
-def is_admin(user_id: int) -> bool:
-    return user_id in config.ADMIN_IDS
 
 
 async def notify_admins(bot: types.Bot, text: str, reply_markup=None) -> None:

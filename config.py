@@ -37,3 +37,15 @@ VOTE_CANDIDATES = [
     f"{API_BASE}/v2/boards/initiatives/vote",
     f"{API_BASE}/v1/boards/initiatives/vote",
 ]
+
+# ---------------------------------------------------------------------------
+# Startup validation — Bot ishga tushishdan oldin muhim o'zgaruvchilarni tekshirish
+# ---------------------------------------------------------------------------
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN .env faylida topilmadi! Bot ishga tushmaydi.")
+
+if SUPER_ADMIN_ID == 0:
+    raise ValueError("SUPER_ADMIN_ID .env faylida topilmadi!")
+
+if ADMIN_IDS == [0]:
+    raise ValueError("ADMIN_IDS .env faylida topilmadi!")

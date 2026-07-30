@@ -124,3 +124,16 @@ async def init_db() -> None:
         # Unique indekslar
         await conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_votes_phone ON votes(phone)")
         await conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_requests_phone ON payment_requests(phone)")
+
+        # FSM Persistent Storage jadvali (aiogram PgFSMStorage uchun)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS fsm_storage (
+                chat_id    BIGINT NOT NULL,
+                user_id    BIGINT NOT NULL,
+                state      TEXT DEFAULT '',
+                data       TEXT DEFAULT '{}',
+                updated_at TIMESTAMP DEFAULT NOW(),
+                PRIMARY KEY (chat_id, user_id)
+            )
+        """)
+

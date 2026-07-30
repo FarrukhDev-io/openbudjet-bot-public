@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 from utils import check_rate_limit
+from utils.helpers import is_admin
+
 
 
 class VoteState(StatesGroup):
@@ -23,9 +25,6 @@ class VoteState(StatesGroup):
     waiting_for_otp = State()
     waiting_for_card = State()
 
-
-def is_admin(user_id: int) -> bool:
-    return user_id in config.ADMIN_IDS
 
 
 @router.callback_query(F.data == "start_vote")

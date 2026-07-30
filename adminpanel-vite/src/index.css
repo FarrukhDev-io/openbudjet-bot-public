@@ -1,1 +1,83 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
+
+@theme {
+  /* Color tokens */
+  --color-bg:        #0a0a0f;
+  --color-surface:   rgba(255, 255, 255, 0.04);
+  --color-border:    rgba(255, 255, 255, 0.08);
+
+  --color-primary:   #6366f1;
+  --color-success:   #22c55e;
+  --color-danger:    #ef4444;
+  --color-warning:   #f59e0b;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Radius */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+}
+
+/* Base reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0a0a0f;
+  color: #f1f5f9;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+/* Smooth transitions on interactive elements */
+button,
+a,
+input,
+textarea,
+select {
+  transition: all 0.15s ease;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.6);
+  outline-offset: 2px;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}

@@ -9,13 +9,12 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 import config
 import database as db
 import keyboards as kb
+from utils.helpers import is_admin
+
 
 logger = logging.getLogger(__name__)
 router = Router()
 
-
-def is_admin(user_id: int) -> bool:
-    return user_id in config.ADMIN_IDS
 
 
 def is_voting_period() -> bool:

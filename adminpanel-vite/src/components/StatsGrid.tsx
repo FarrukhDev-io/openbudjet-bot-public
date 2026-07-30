@@ -1,58 +1,65 @@
 import React from "react";
 import type { Stats } from "../types";
 import { Card } from "./ui/Card";
-import { FiUsers, FiCheckCircle, FiClock, FiCheck, FiDollarSign } from "react-icons/fi";
 
 interface StatsGridProps {
   stats: Stats | null;
+  loading: boolean;
 }
 
-export const StatsGrid: React.FC<StatsGridProps> = React.memo(({ stats }) => {
+const statItems = [
+  { key: "total_users",    emoji: "👥", label: "Foydalanuvchilar",  color: "text-slate-100" },
+  { key: "total_votes",    emoji: "🗳",  label: "Ovozlar",           color: "text-slate-100" },
+  { key: "confirmed",      emoji: "✅", label: "Tasdiqlangan",      color: "text-emerald-400" },
+  { key: "today_votes",    emoji: "📅", label: "Bugun",             color: "text-sky-400" },
+  { key: "pending_pays",   emoji: "⏳", label: "Kutilmoqda",        color: "text-amber-400" },
+  { key: "paid_count",     emoji: "💰", label: "To'langan",         color: "text-emerald-400" },
+  { key: "total_refs",     emoji: "👤", label: "Referrallar",       color: "text-indigo-400" },
+] as const;
+
+function SkeletonCard() {
+  return (
+    <Card className="flex flex-col justify-between min-h-[90px] animate-pulse">
+      <div className="h-3 bg-slate-700 rounded w-3/4 mb-4" />
+      <div className="h-7 bg-slate-700 rounded w-1/2" />
+    </Card>
+  );
+}
+
+export const StatsGrid: React.FC<StatsGridProps> = React.memo(({ stats, loading }) => {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+      </div>
+    );
+  }
+
   if (!stats) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-3 mb-6">
-      <Card className="flex flex-col justify-between min-h-[90px]">
-        <div className="flex justify-between items-center text-slate-400">
-          <span className="text-[11px] font-bold uppercase tracking-wider">Jami a'zolar</span>
-          <FiUsers className="text-slate-400 text-sm" />
-        </div>
-        <span className="text-xl font-extrabold text-slate-100">{stats.total_users}</span>
-      </Card>
+    <div className="grid grid-cols-2 gap-3 mb-4">
+      {statItems.map(({ key, emoji, label, color }) => (
+        <Card key={key} className="flex flex-col justify-between min-h-[90px]">
+          <div className="flex justify-between items-start">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 leading-tight">{label}</span>
+            <span className="text-base">{emoji}</span>
+          </div>
+          <span className={`text-2xl font-black mt-2 ${color}`}>
+            {(stats[key] as number).toLocaleString()}
+          </span>
+        </Card>
+      ))}
 
-      <Card className="flex flex-col justify-between min-h-[90px]">
-        <div className="flex justify-between items-center text-slate-400">
-          <span className="text-[11px] font-bold uppercase tracking-wider">Ovozlar (Tasdiq)</span>
-          <FiCheckCircle className="text-slate-400 text-sm" />
-        </div>
-        <span className="text-xl font-extrabold text-slate-100">
-          {stats.total_votes} <span className="text-xs font-normal text-slate-400">({stats.confirmed})</span>
-        </span>
-      </Card>
-
-      <Card className="flex flex-col justify-between min-h-[90px]">
-        <div className="flex justify-between items-center text-slate-400">
-          <span className="text-[11px] font-bold uppercase tracking-wider">Bugungi ovozlar</span>
-          <FiCheck className="text-emerald-400 text-sm" />
-        </div>
-        <span className="text-xl font-extrabold text-emerald-400">{stats.today_votes}</span>
-      </Card>
-
-      <Card className="flex flex-col justify-between min-h-[90px] border-l-amber-500/80 border-l-2">
-        <div className="flex justify-between items-center text-slate-400">
-          <span className="text-[11px] font-bold uppercase tracking-wider">Kutayotgan to'lovlar</span>
-          <FiClock className="text-amber-500 text-sm" />
-        </div>
-        <span className="text-xl font-extrabold text-amber-500">{stats.pending_pays}</span>
-      </Card>
-
+      {/* Wide total paid sum card */}
       <Card className="col-span-2 flex flex-col justify-between min-h-[90px]">
-        <div className="flex justify-between items-center text-slate-400">
-          <span className="text-[11px] font-bold uppercase tracking-wider">Jami to'langan summa</span>
-          <FiDollarSign className="text-indigo-400 text-sm" />
+        <div className="flex justify-between items-start">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Jami summa</span>
+          <span className="text-base">💵</span>
         </div>
-        <span className="text-2xl font-black text-indigo-400">
-          {stats.total_paid_sum.toLocaleString()} <span className="text-sm font-normal text-slate-400">so'm</span>
+        <span className="text-2xl font-black mt-2 text-indigo-400">
+          {stats.total_paid_sum.toLocaleString()}{" "}
+          <span className="text-sm font-normal text-slate-400">so'm</span>
         </span>
       </Card>
     </div>
