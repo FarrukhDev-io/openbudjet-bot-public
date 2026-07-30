@@ -17,7 +17,7 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-2xl flex justify-between items-center z-40 animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-slate-800/90 backdrop-blur-md border border-slate-700/40 rounded-2xl p-4 shadow-md flex justify-between items-center z-40 animate-in slide-in-from-bottom duration-300">
       <span className="text-xs text-slate-300 font-bold">
         <span className="text-indigo-400 font-black">{selectedCount} ta</span> tanlandi
       </span>

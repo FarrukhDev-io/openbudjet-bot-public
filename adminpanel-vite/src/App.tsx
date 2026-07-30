@@ -191,7 +191,7 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 max-w-xl mx-auto pb-24">
       {/* Sticky Header and Controls */}
-      <div className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md pb-4 border-b border-slate-800 mb-4">
+      <div className="sticky top-0 z-40 bg-slate-800/90 backdrop-blur-md shadow-md pb-4 border-b border-slate-700/40 mb-4 -mx-4 px-4 pt-2">
         <header className="flex justify-between items-center mb-4 pt-2">
           <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
             OpenBudget Admin

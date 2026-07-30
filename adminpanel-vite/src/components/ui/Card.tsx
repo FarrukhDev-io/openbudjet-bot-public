@@ -14,14 +14,14 @@ export const Card: React.FC<CardProps> = ({
   const getBorderClasses = () => {
     switch (status) {
       case "pending":
-        return "border-l-4 border-l-amber-500 border-y border-r border-slate-800 rounded-r-2xl";
+        return "border-l-4 border-l-amber-500 border-y border-r border-slate-800/60 rounded-r-2xl";
       case "paid":
-        return "border-l-4 border-l-emerald-500 border-y border-r border-slate-800 rounded-r-2xl";
+        return "border-l-4 border-l-emerald-500 border-y border-r border-slate-800/60 rounded-r-2xl";
       case "rejected":
-        return "border-l-4 border-l-rose-500 border-y border-r border-slate-800 rounded-r-2xl";
+        return "border-l-4 border-l-rose-500 border-y border-r border-slate-800/60 rounded-r-2xl";
       case "default":
       default:
-        return "border border-slate-800 rounded-2xl";
+        return "border border-slate-800/60 rounded-2xl";
     }
   };
 
