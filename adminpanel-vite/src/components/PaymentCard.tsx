@@ -1,126 +1,197 @@
-import React from "react";
-import { FiCopy, FiCheck, FiX } from "react-icons/fi";
+import React, { useState, useEffect } from "react";
 import type { PaymentRequest } from "../types";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
+import { FiCopy, FiCheck, FiX, FiExternalLink } from "react-icons/fi";
 
 interface PaymentCardProps {
   payment: PaymentRequest;
   activeTab: "pending" | "paid" | "rejected";
   isSelected: boolean;
-  onSelectChange: (id: number, checked: boolean) => void;
-  copiedId: number | null;
-  onCopyClick: (text: string, id: number) => void;
-  onPayClick: (id: number) => void;
-  onRejectClick: (id: number) => void;
+  onSelect: (id: number, checked: boolean) => void;
+  onApprove: (id: number) => Promise<void>;
+  onRejectPrompt: (id: number) => void;
+  onCopy: (card: string) => void;
 }
 
 export const PaymentCard: React.FC<PaymentCardProps> = React.memo(({
   payment,
   activeTab,
   isSelected,
-  onSelectChange,
-  copiedId,
-  onCopyClick,
-  onPayClick,
-  onRejectClick
+  onSelect,
+  onApprove,
+  onRejectPrompt,
+  onCopy,
 }) => {
-  const formatCard = (card: string) => {
-    const cleaned = card.replace(/\s+/g, "");
-    const parts = [];
-    for (let i = 0; i < cleaned.length; i += 4) {
-      parts.push(cleaned.substring(i, i + 4));
+  const [approveConfirm, setApproveConfirm] = useState(false);
+  const [rejectConfirm, setRejectConfirm] = useState(false);
+  const [copiedRecently, setCopiedRecently] = useState(false);
+
+  useEffect(() => {
+    let timer: any;
+    if (approveConfirm) {
+      timer = setTimeout(() => setApproveConfirm(false), 3000);
     }
-    return parts.join(" ");
+    return () => clearTimeout(timer);
+  }, [approveConfirm]);
+
+  useEffect(() => {
+    let timer: any;
+    if (rejectConfirm) {
+      timer = setTimeout(() => setRejectConfirm(false), 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [rejectConfirm]);
+
+  const handleApproveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (approveConfirm) {
+      onApprove(payment.id);
+      setApproveConfirm(false);
+    } else {
+      setApproveConfirm(true);
+      setRejectConfirm(false);
+    }
   };
 
+  const handleRejectClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (rejectConfirm) {
+      onRejectPrompt(payment.id);
+      setRejectConfirm(false);
+    } else {
+      setRejectConfirm(true);
+      setApproveConfirm(false);
+    }
+  };
+
+  const handleCopyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onCopy(payment.card_number);
+    setCopiedRecently(true);
+    setTimeout(() => setCopiedRecently(false), 2000);
+  };
+
+  const formatCardNumber = (card: string) => {
+    const clean = card.replace(/\s+/g, "");
+    const chunks = [];
+    for (let i = 0; i < clean.length; i += 4) {
+      chunks.push(clean.substring(i, i + 4));
+    }
+    return chunks.join(" ");
+  };
+
+  const bankApps = [
+    { name: "Click", schema: "clickuz://", url: "https://click.uz" },
+    { name: "Payme", schema: "payme://", url: "https://payme.uz" },
+    { name: "Uzum Bank", schema: "uzumbank://", url: "https://uzumbank.uz" },
+  ];
+
   return (
-    <Card status={payment.status as any}>
+    <Card status={activeTab} className="flex flex-col gap-3 relative select-none">
+      {/* Top Header */}
       <div className="flex justify-between items-start">
-        <div className="flex gap-3 items-center">
+        <div className="flex items-center gap-2.5">
           {activeTab === "pending" && (
             <input
               type="checkbox"
               checked={isSelected}
-              onChange={(e) => onSelectChange(payment.id, e.target.checked)}
-              className="w-4 h-4 rounded border-slate-800 text-indigo-600 focus:ring-indigo-500 accent-indigo-500 cursor-pointer"
+              onChange={(e) => onSelect(payment.id, e.target.checked)}
+              className="w-5 h-5 rounded-md accent-indigo-600 bg-slate-950 border-slate-800 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer"
             />
           )}
           <div>
-            <h3 className="font-bold text-sm text-slate-200">{payment.full_name}</h3>
-            {payment.username && <span className="text-xs text-indigo-400 font-semibold">@{payment.username}</span>}
+            <h3 className="text-sm font-bold text-slate-100 leading-tight">
+              {payment.full_name}
+            </h3>
+            {payment.username && (
+              <span className="text-xs text-indigo-400 font-semibold">@{payment.username}</span>
+            )}
           </div>
         </div>
-        <span className="font-black text-sm text-emerald-400">{payment.amount.toLocaleString()} so'm</span>
+        <span className="text-sm font-extrabold text-emerald-400">
+          {payment.amount.toLocaleString()} so'm
+        </span>
       </div>
 
-      <div className="text-xs text-slate-300 flex flex-col gap-2">
+      {/* Body details */}
+      <div className="text-xs text-slate-400 flex flex-col gap-1.5">
         <p>
-          <strong className="text-slate-500">Tel:</strong> +{payment.phone}
+          <strong className="text-slate-300">📞 Tel:</strong> +{payment.phone}
         </p>
-        <div className="flex justify-between items-center bg-slate-950/50 border border-slate-800/80 px-3 py-2 rounded-xl">
-          <code className="font-mono text-sm text-slate-200 font-bold tracking-wider">
-            {formatCard(payment.card_number)}
+
+        {/* Card copying container */}
+        <div className="flex justify-between items-center bg-slate-950/60 border border-slate-800/40 px-3 py-2 rounded-xl mt-1.5">
+          <code className="text-slate-100 font-mono text-sm tracking-wider">
+            {formatCardNumber(payment.card_number)}
           </code>
-          <button
-            onClick={() => onCopyClick(payment.card_number, payment.id)}
-            className="px-2.5 py-1 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 hover:text-slate-100 rounded-lg text-[10px] font-bold flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+          <Button
+            variant="secondary"
+            size="sm"
+            onConfirmClick={handleCopyClick}
+            className="h-8 min-w-[70px]"
           >
-            {copiedId === payment.id ? "✓ Nusxalandi!" : <><FiCopy /> Nusxa</>}
-          </button>
+            {copiedRecently ? (
+              <span className="text-emerald-400 text-[10px]">Nusxalandi!</span>
+            ) : (
+              <>
+                <FiCopy className="text-xs" />
+                <span className="text-[10px]">Nusxa</span>
+              </>
+            )}
+          </Button>
         </div>
 
-        {/* Quick Bank Launcher */}
-        {copiedId === payment.id && (
-          <div className="bg-indigo-950/20 border border-indigo-900/30 p-2.5 rounded-xl mt-1 flex flex-col gap-2">
-            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-              Bank ilovasida ochish:
-            </span>
-            <div className="flex gap-2">
-              <a
-                href="clickuz://"
-                className="flex-1 text-center py-2 bg-[#0096e2] rounded-lg text-white font-extrabold text-[11px] hover:opacity-90 transition-opacity"
-              >
-                Click
-              </a>
-              <a
-                href="payme://"
-                className="flex-1 text-center py-2 bg-[#12c8c4] rounded-lg text-white font-extrabold text-[11px] hover:opacity-90 transition-opacity"
-              >
-                Payme
-              </a>
-              <a
-                href="uzumbank://"
-                className="flex-1 text-center py-2 bg-[#7000ff] rounded-lg text-white font-extrabold text-[11px] hover:opacity-90 transition-opacity"
-              >
-                Uzum
-              </a>
+        {/* Banking Deep Link Launcher - displayed when copied or pending */}
+        {activeTab === "pending" && (
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[10px] text-slate-500">Ilovani ochish:</span>
+            <div className="flex gap-1.5">
+              {bankApps.map((app) => (
+                <a
+                  key={app.name}
+                  href={app.schema}
+                  onClick={() => {
+                    setTimeout(() => {
+                      window.location.href = app.url;
+                    }, 500);
+                  }}
+                  className="px-2 py-1 bg-slate-800 hover:bg-slate-750 text-[10px] font-semibold text-indigo-400 rounded-md flex items-center gap-1 border border-slate-700/40 transition-colors"
+                >
+                  {app.name} <FiExternalLink className="text-[8px]" />
+                </a>
+              ))}
             </div>
           </div>
         )}
 
-        <p className="text-[10px] text-slate-500 text-right mt-1">
-          {payment.requested_at.substring(0, 16)}
-        </p>
+        {/* Date and Rejection note */}
+        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-1">
+          <span>{payment.requested_at.substring(0, 16)}</span>
+          {payment.status === "rejected" && payment.u_full_name && (
+            <span className="text-rose-400 italic">Rad etgan: {payment.u_full_name}</span>
+          )}
+        </div>
       </div>
 
+      {/* Action Buttons for Pending requests with Double Click confirm */}
       {activeTab === "pending" && (
-        <div className="flex gap-3 mt-1">
+        <div className="flex gap-2.5 mt-2">
           <Button
-            variant="success"
-            needConfirm
-            onConfirmClick={() => onPayClick(payment.id)}
-            className="flex-1"
+            variant={approveConfirm ? "danger" : "success"}
+            className="flex-1 text-xs"
+            onConfirmClick={handleApproveClick}
           >
-            <FiCheck className="text-sm" /> To'landi
+            <FiCheck />
+            <span>{approveConfirm ? "Aniqmi? 🤨" : "To'landi"}</span>
           </Button>
           <Button
-            variant="danger"
-            needConfirm
-            onConfirmClick={() => onRejectClick(payment.id)}
-            className="flex-1"
+            variant={rejectConfirm ? "primary" : "danger"}
+            className="flex-1 text-xs"
+            onConfirmClick={handleRejectClick}
           >
-            <FiX className="text-sm" /> Rad etish
+            <FiX />
+            <span>{rejectConfirm ? "Aniqmi? 🤨" : "Rad etish"}</span>
           </Button>
         </div>
       )}

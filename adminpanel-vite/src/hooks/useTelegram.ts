@@ -1,43 +1,59 @@
 import { useEffect, useState } from "react";
 
+export interface TelegramUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+}
+
 export function useTelegram() {
-  const [tg, setTg] = useState<any>(null);
+  const [user, setUser] = useState<TelegramUser | null>(null);
+
+  const getTelegramWebApp = () => {
+    if (typeof window !== "undefined") {
+      return (window as any).Telegram?.WebApp || null;
+    }
+    return null;
+  };
 
   useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
-      const webApp = (window as any).Telegram.WebApp;
+    const webApp = getTelegramWebApp();
+    if (webApp) {
       webApp.ready();
       webApp.expand();
       webApp.enableClosingConfirmation();
-      setTg(webApp);
+      if (webApp.initDataUnsafe?.user) {
+        setUser(webApp.initDataUnsafe.user);
+      }
     }
   }, []);
 
-  const user = tg?.initDataUnsafe?.user || null;
-  const adminId = user?.id || 123456789; // Fallback for dev environment
-
   const triggerHaptic = (type: "light" | "medium" | "heavy" | "success" | "warning" | "error" = "medium") => {
-    if (!tg?.HapticFeedback) return;
-    try {
-      if (["light", "medium", "heavy"].includes(type)) {
-        tg.HapticFeedback.impactOccurred(type);
-      } else if (["success", "warning", "error"].includes(type)) {
-        tg.HapticFeedback.notificationOccurred(type);
-      }
-    } catch (e) {
-      console.warn("Haptic feedback trigger failed:", e);
+    const webApp = getTelegramWebApp();
+    if (!webApp?.HapticFeedback) return;
+
+    if (type === "success" || type === "warning" || type === "error") {
+      webApp.HapticFeedback.notificationOccurred(type);
+    } else {
+      webApp.HapticFeedback.impactOccurred(type);
     }
   };
 
   const closeWebApp = () => {
-    tg?.close();
+    const webApp = getTelegramWebApp();
+    if (webApp) {
+      webApp.close();
+    }
   };
 
+  const adminId = user?.id || 991729905; // Fallback to user's admin ID for local dev
+
   return {
-    tg,
+    webApp: getTelegramWebApp(),
     user,
     adminId,
     triggerHaptic,
-    closeWebApp
+    closeWebApp,
   };
 }

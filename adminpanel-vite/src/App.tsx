@@ -17,7 +17,6 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   // Rejection states
   const [rejectId, setRejectId] = useState<number | null>(null);
@@ -142,13 +141,9 @@ function App() {
   }, [adminId, selectedIds, fetchData, triggerHaptic]);
 
   // Copy Callback
-  const copyToClipboard = useCallback((text: string, id: number) => {
+  const copyToClipboard = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedId(id);
     triggerHaptic("light");
-    setTimeout(() => {
-      setCopiedId((prev) => (prev === id ? null : prev));
-    }, 10000);
   }, [triggerHaptic]);
 
   // Search logic and filtering memoization
@@ -180,8 +175,8 @@ function App() {
     }
   }, []);
 
-  const onPayClick = useCallback((id: number) => {
-    handleAction(id, "paid");
+  const onPayClick = useCallback(async (id: number) => {
+    await handleAction(id, "paid");
   }, [handleAction]);
 
   const onRejectClick = useCallback((id: number) => {
@@ -205,7 +200,7 @@ function App() {
 
         <TabNavigation
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          onTabChange={setActiveTab}
           pendingCount={stats?.pending_pays || 0}
         />
 
@@ -247,11 +242,10 @@ function App() {
                 payment={p}
                 activeTab={activeTab}
                 isSelected={selectedIds.includes(p.id)}
-                onSelectChange={handleSelectChange}
-                copiedId={copiedId}
-                onCopyClick={copyToClipboard}
-                onPayClick={onPayClick}
-                onRejectClick={onRejectClick}
+                onSelect={handleSelectChange}
+                onApprove={onPayClick}
+                onRejectPrompt={onRejectClick}
+                onCopy={copyToClipboard}
               />
             ))
           )}
@@ -278,7 +272,7 @@ function App() {
       {/* Floating Bottom Bar for Bulk Operations */}
       <BulkActionBar
         selectedCount={selectedIds.length}
-        onBulkPay={handleBulkPay}
+        onBulkApprove={handleBulkPay}
         onBulkReject={() => setBulkRejectOpen(true)}
         submitting={submitting}
       />
