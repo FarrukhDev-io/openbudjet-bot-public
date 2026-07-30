@@ -26,6 +26,7 @@ FILE_URL = f"{API_BASE}/v2/info/file"
 VOTING_START = os.getenv("VOTING_START", "2026-08-22")
 VOTING_END = os.getenv("VOTING_END", "2026-08-31")
 REWARD_AMOUNT = int(os.getenv("REWARD_AMOUNT", "15000"))
+REFERRAL_REWARD = int(os.getenv("REFERRAL_REWARD", "5000"))
 
 VOTE_CANDIDATES = [
     f"{API_BASE}/v2/vote/add",
