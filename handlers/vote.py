@@ -14,6 +14,8 @@ import utils
 logger = logging.getLogger(__name__)
 router = Router()
 
+from utils import check_rate_limit
+
 
 class VoteState(StatesGroup):
     waiting_for_phone = State()
@@ -233,13 +235,18 @@ async def submit_vote(session: aiohttp.ClientSession, access_token: str, initiat
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    # Dynamic VOTE_URL retrieval from Database configurations (Thread-safe)
     vote_url = await db.get_config("VOTE_URL")
     if vote_url:
         payload = {"initiative_id": initiative_uuid}
         async with session.post(vote_url, json=payload, headers=headers) as resp:
-            data = await resp.json(content_type=None)
+            try:
+                data = await resp.json(content_type=None)
+            except Exception:
+                data = {}
             if resp.status in (200, 201):
+                error_msg = data.get("message", "") if isinstance(data, dict) else ""
+                if "already" in error_msg.lower() or "voted" in error_msg.lower() or data.get("status") == "ERROR":
+                    raise ValueError("Siz allaqachon bu loyihaga ovoz bergansiz!")
                 return data
             raise ValueError(f"Vote xato ({resp.status}): {data.get('message', str(data))}")
 
@@ -259,6 +266,10 @@ async def submit_vote(session: aiohttp.ClientSession, access_token: str, initiat
                     if resp.status == 404:
                         break
                     if resp.status in (200, 201):
+                        error_msg = last_body.get("message", "") if isinstance(last_body, dict) else ""
+                        if "already" in error_msg.lower() or "voted" in error_msg.lower() or last_body.get("status") == "ERROR":
+                            await db.set_config("VOTE_URL", url)
+                            raise ValueError("Siz allaqachon bu loyihaga ovoz bergansiz!")
                         await db.set_config("VOTE_URL", url)
                         return last_body
                     if resp.status == 401:
@@ -297,6 +308,11 @@ async def process_captcha(message: types.Message, state: FSMContext) -> None:
     session = message.bot.dispatcher.workflow_data.get("session")
     if not session:
         await status_msg.edit_text("❌ Tizim sessiyasida xatolik. /start bosing.")
+        await state.clear()
+        return
+
+    if not check_rate_limit(phone_number, message.from_user.id):
+        await status_msg.edit_text("❌ SMS yuborish limiti oshdi. 10 daqiqadan so'ng qayta urining.", reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)))
         await state.clear()
         return
 
@@ -442,5 +458,5 @@ async def process_card(message: types.Message, state: FSMContext) -> None:
     await notify_admins(
         message.bot,
         admin_text,
-        reply_markup=kb.payment_action_keyboard(request_id),
+        reply_markup=kb.payment_action_keyboard(request_id, card, config.REWARD_AMOUNT),
     )

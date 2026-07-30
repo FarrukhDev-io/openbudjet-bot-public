@@ -36,3 +36,13 @@ def mask_card(card: str) -> str:
     if len(digits) >= 8:
         return f"{digits[:4]} **** **** {digits[-4:]}"
     return card
+
+
+def generate_p2p_links(card_number: str, amount: int) -> dict:
+    """Uzbekistan to'lov tizimlari uchun oldindan to'ldirilgan P2P havolalarini yaratadi"""
+    clean_card = card_number.replace(" ", "").replace("-", "")
+    return {
+        "click": f"https://my.click.uz/services/p2p?card_number={clean_card}&amount={amount}",
+        "payme": f"https://checkout.paycom.uz/card-to-card?to={clean_card}&amount={amount * 100}",
+        "uzum": f"https://uzumbank.uz/transfer?card={clean_card}&amount={amount}"
+    }

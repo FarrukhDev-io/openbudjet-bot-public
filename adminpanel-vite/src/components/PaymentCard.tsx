@@ -82,9 +82,21 @@ export const PaymentCard: React.FC<PaymentCardProps> = React.memo(({
   };
 
   const bankApps = [
-    { name: "Click", schema: "clickuz://", url: "https://click.uz" },
-    { name: "Payme", schema: "payme://", url: "https://payme.uz" },
-    { name: "Uzum Bank", schema: "uzumbank://", url: "https://uzumbank.uz" },
+    { 
+      name: "Click", 
+      schema: `https://my.click.uz/services/p2p?card_number=${payment.card_number}&amount=${payment.amount}`, 
+      url: `https://my.click.uz/services/p2p?card_number=${payment.card_number}&amount=${payment.amount}` 
+    },
+    { 
+      name: "Payme", 
+      schema: `https://checkout.paycom.uz/card-to-card?to=${payment.card_number}&amount=${payment.amount * 100}`, 
+      url: `https://checkout.paycom.uz/card-to-card?to=${payment.card_number}&amount=${payment.amount * 100}` 
+    },
+    { 
+      name: "Uzum Bank", 
+      schema: `https://uzumbank.uz/transfer?card=${payment.card_number}&amount=${payment.amount}`, 
+      url: `https://uzumbank.uz/transfer?card=${payment.card_number}&amount=${payment.amount}` 
+    },
   ];
 
   return (

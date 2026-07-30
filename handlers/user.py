@@ -112,14 +112,16 @@ async def cmd_help(message: types.Message) -> None:
 
 @router.message(F.text == "📞 Bog'lanish")
 async def cmd_contact(message: types.Message) -> None:
+    admin_tg = config.ADMIN_TELEGRAM.lstrip("@")
+    dev_tg = config.DEVELOPER_TELEGRAM.lstrip("@")
     await message.answer(
-        "📞 <b>Bog'lanish</b>\n\n"
-        "👤 <b>Romitan tuman Attaron mahalla yoshlar yetakchisi</b>\n"
-        "📱 Telefon: <a href='tel:+998943238586'>+998 94 323 85 86</a>\n"
-        "💬 Telegram: @joshqinjumayev\n\n"
-        f"🌐 Loyiha: <a href='{config.INITIATIVE_URL}'>openbudget.uz</a>\n\n"
+        "📞 <b>Asosiy bog'lanish va qo'llab-quvvatlash:</b>\n\n"
+        "👤 <b>Mahalla Yoshlar Yetakchisi</b>\n"
+        f"📱 Telefon: <a href='tel:{config.ADMIN_PHONE}'>{config.ADMIN_PHONE}</a>\n"
+        f"💬 Telegram: <a href='https://t.me/{admin_tg}'>@{admin_tg}</a>\n\n"
+        f"🌐 Loyiha havolasi: <a href='{config.INITIATIVE_URL}'>openbudget.uz</a>\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "🛠 <b>Bot muallifi:</b> <a href='https://t.me/sadullaef_06'>@sadullaef_06</a>",
+        f"🛠 <b>Dasturiy yordam va muallif:</b> <a href='https://t.me/{dev_tg}'>@{dev_tg}</a>",
         reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)),
     )
 

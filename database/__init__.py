@@ -1,4 +1,4 @@
-from database.connection import init_db, get_conn
+from database.connection import init_db, get_conn, init_db_pool, close_db_pool
 from database.models import (
     get_config,
     set_config,
@@ -23,4 +23,5 @@ from database.models import (
     get_top_referrers,
     get_all_payments,
     search_users,
+    add_audit_log,
 )

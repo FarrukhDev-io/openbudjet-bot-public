@@ -9,20 +9,19 @@ from database.connection import get_conn
 
 async def get_config(key: str, default: Optional[str] = None) -> Optional[str]:
     """Konfiguratsiya qiymatini olish"""
-    async with await get_conn() as conn:
-        async with conn.execute("SELECT value FROM config WHERE key = ?", (key,)) as cursor:
-            row = await cursor.fetchone()
-            return row["value"] if row else default
+    async with get_conn() as conn:
+        val = await conn.fetchval("SELECT value FROM config WHERE key = $1", key)
+        return val if val is not None else default
 
 
 async def set_config(key: str, value: str) -> None:
     """Konfiguratsiya qiymatini saqlash/yangilash"""
-    async with await get_conn() as conn:
+    async with get_conn() as conn:
         await conn.execute(
-            "INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)",
-            (key, value)
+            """INSERT INTO config (key, value) VALUES ($1, $2)
+               ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value""",
+            key, value
         )
-        await conn.commit()
 
 
 # ==============================================================================
@@ -31,50 +30,46 @@ async def set_config(key: str, value: str) -> None:
 
 async def add_user(tg_id: int, username: str, full_name: str, ref_by: Optional[int] = None) -> None:
     """Yangi foydalanuvchi qo'shish"""
-    async with await get_conn() as conn:
+    async with get_conn() as conn:
         await conn.execute("""
-            INSERT OR IGNORE INTO users (tg_id, username, full_name, ref_by)
-            VALUES (?, ?, ?, ?)
-        """, (tg_id, username, full_name, ref_by))
-        await conn.commit()
+            INSERT INTO users (tg_id, username, full_name, ref_by)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (tg_id) DO NOTHING
+        """, tg_id, username, full_name, ref_by)
 
 
 async def get_user(tg_id: int) -> Optional[Dict[str, Any]]:
     """Foydalanuvchini ID bo'yicha olish"""
-    async with await get_conn() as conn:
-        async with conn.execute("SELECT * FROM users WHERE tg_id = ?", (tg_id,)) as cursor:
-            row = await cursor.fetchone()
-            return dict(row) if row else None
+    async with get_conn() as conn:
+        row = await conn.fetchrow("SELECT * FROM users WHERE tg_id = $1", tg_id)
+        return dict(row) if row else None
 
 
 async def set_user_phone(tg_id: int, phone: str) -> None:
     """Foydalanuvchi telefon raqamini yangilash"""
-    async with await get_conn() as conn:
-        await conn.execute("UPDATE users SET phone = ? WHERE tg_id = ?", (phone, tg_id))
-        await conn.commit()
+    async with get_conn() as conn:
+        await conn.execute("UPDATE users SET phone = $1 WHERE tg_id = $2", phone, tg_id)
 
 
 async def set_user_voted(tg_id: int) -> None:
     """Foydalanuvchi ovoz berganligini belgilash"""
-    async with await get_conn() as conn:
-        await conn.execute("UPDATE users SET voted = 1 WHERE tg_id = ?", (tg_id,))
-        await conn.commit()
+    async with get_conn() as conn:
+        await conn.execute("UPDATE users SET voted = 1 WHERE tg_id = $1", tg_id)
 
 
 async def set_vote_confirmed(tg_id: int) -> None:
     """Ovozni tasdiqlash va referrallarni yangilash"""
-    async with await get_conn() as conn:
+    async with get_conn() as conn:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        await conn.execute("UPDATE users SET vote_confirmed = 1 WHERE tg_id = ?", (tg_id,))
+        await conn.execute("UPDATE users SET vote_confirmed = 1 WHERE tg_id = $1", tg_id)
         await conn.execute(
-            "UPDATE votes SET confirmed = 1, confirmed_at = ? WHERE tg_id = ? AND confirmed = 0",
-            (now, tg_id)
+            "UPDATE votes SET confirmed = 1, confirmed_at = $1 WHERE tg_id = $2 AND confirmed = 0",
+            now, tg_id
         )
         await conn.execute(
-            "UPDATE referrals SET invited_voted = 1 WHERE invited_id = ?",
-            (tg_id,)
+            "UPDATE referrals SET invited_voted = 1 WHERE invited_id = $1",
+            tg_id
         )
-        await conn.commit()
 
 
 # ==============================================================================
@@ -83,26 +78,24 @@ async def set_vote_confirmed(tg_id: int) -> None:
 
 async def add_vote(tg_id: int, phone: str) -> None:
     """Ovoz yozuvini qo'shish"""
-    async with await get_conn() as conn:
+    async with get_conn() as conn:
         await conn.execute(
-            "INSERT INTO votes (tg_id, phone) VALUES (?, ?)",
-            (tg_id, phone)
+            "INSERT INTO votes (tg_id, phone) VALUES ($1, $2)",
+            tg_id, phone
         )
         await conn.execute(
-            "UPDATE users SET voted = 1, phone = ? WHERE tg_id = ?",
-            (phone, tg_id)
+            "UPDATE users SET voted = 1, phone = $1 WHERE tg_id = $2",
+            phone, tg_id
         )
-        await conn.commit()
 
 
 async def get_vote(tg_id: int) -> Optional[Dict[str, Any]]:
     """Foydalanuvchining so'nggi ovozini olish"""
-    async with await get_conn() as conn:
-        async with conn.execute(
-            "SELECT * FROM votes WHERE tg_id = ? ORDER BY id DESC LIMIT 1", (tg_id,)
-        ) as cursor:
-            row = await cursor.fetchone()
-            return dict(row) if row else None
+    async with get_conn() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM votes WHERE tg_id = $1 ORDER BY id DESC LIMIT 1", tg_id
+        )
+        return dict(row) if row else None
 
 
 async def has_voted(tg_id: int) -> bool:
@@ -117,59 +110,54 @@ async def has_voted(tg_id: int) -> bool:
 
 async def add_payment_request(tg_id: int, phone: str, full_name: str, card_number: str) -> int:
     """To'lov so'rovi qo'shish va yangi row ID sini qaytarish"""
-    async with await get_conn() as conn:
-        cursor = await conn.execute(
+    async with get_conn() as conn:
+        row_id = await conn.fetchval(
             """INSERT INTO payment_requests (tg_id, phone, full_name, card_number)
-               VALUES (?, ?, ?, ?)""",
-            (tg_id, phone, full_name, card_number)
+               VALUES ($1, $2, $3, $4) RETURNING id""",
+            tg_id, phone, full_name, card_number
         )
-        row_id = cursor.lastrowid
-        await conn.commit()
         return row_id
 
 
 async def get_payment_request(request_id: int) -> Optional[Dict[str, Any]]:
     """To'lov so'rovini ID bo'yicha olish"""
-    async with await get_conn() as conn:
-        async with conn.execute(
-            "SELECT * FROM payment_requests WHERE id = ?", (request_id,)
-        ) as cursor:
-            row = await cursor.fetchone()
-            return dict(row) if row else None
+    async with get_conn() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM payment_requests WHERE id = $1", request_id
+        )
+        return dict(row) if row else None
 
 
 async def get_pending_payments() -> List[Dict[str, Any]]:
     """Kutilayotgan to'lovlarni olish"""
-    async with await get_conn() as conn:
-        async with conn.execute(
+    async with get_conn() as conn:
+        rows = await conn.fetch(
             "SELECT * FROM payment_requests WHERE status = 'pending' ORDER BY id DESC"
-        ) as cursor:
-            rows = await cursor.fetchall()
-            return [dict(r) for r in rows]
+        )
+        return [dict(r) for r in rows]
 
 
 async def update_payment_status(request_id: int, status: str, admin_id: int, note: str = "") -> None:
     """To'lov statusini va admin eslatmasini yangilash"""
-    async with await get_conn() as conn:
+    async with get_conn() as conn:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         await conn.execute(
             """UPDATE payment_requests
-               SET status = ?, processed_at = ?, processed_by = ?, admin_note = ?
-               WHERE id = ?""",
-            (status, now, admin_id, note, request_id)
+               SET status = $1, processed_at = $2, processed_by = $3, admin_note = $4
+               WHERE id = $5""",
+            status, now, admin_id, note, request_id
         )
-        await conn.commit()
+    await add_audit_log(admin_id, f"{status}_payment", request_id, f"Note: {note}")
 
 
 async def get_user_payment(tg_id: int) -> Optional[Dict[str, Any]]:
     """Foydalanuvchining so'nggi to'lov so'rovini olish"""
-    async with await get_conn() as conn:
-        async with conn.execute(
-            "SELECT * FROM payment_requests WHERE tg_id = ? ORDER BY id DESC LIMIT 1",
-            (tg_id,)
-        ) as cursor:
-            row = await cursor.fetchone()
-            return dict(row) if row else None
+    async with get_conn() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM payment_requests WHERE tg_id = $1 ORDER BY id DESC LIMIT 1",
+            tg_id
+        )
+        return dict(row) if row else None
 
 
 # ==============================================================================
@@ -180,27 +168,23 @@ async def add_referral(inviter_id: int, invited_id: int) -> None:
     """Referral qo'shish"""
     if inviter_id == invited_id:
         return
-    async with await get_conn() as conn:
+    async with get_conn() as conn:
         await conn.execute(
-            "INSERT OR IGNORE INTO referrals (inviter_id, invited_id) VALUES (?, ?)",
-            (inviter_id, invited_id)
+            """INSERT INTO referrals (inviter_id, invited_id) VALUES ($1, $2)
+               ON CONFLICT (invited_id) DO NOTHING""",
+            inviter_id, invited_id
         )
-        await conn.commit()
 
 
 async def get_referral_stats(tg_id: int) -> Dict[str, int]:
     """Referral statistikasini olish"""
-    async with await get_conn() as conn:
-        async with conn.execute(
-            "SELECT COUNT(*) FROM referrals WHERE inviter_id = ?", (tg_id,)
-        ) as cursor:
-            total = (await cursor.fetchone())[0]
-        async with conn.execute(
-            "SELECT COUNT(*) FROM referrals WHERE inviter_id = ? AND invited_voted = 1",
-            (tg_id,)
-        ) as cursor:
-            voted = (await cursor.fetchone())[0]
-        return {"total": total, "voted": voted}
+    async with get_conn() as conn:
+        total = await conn.fetchval("SELECT COUNT(*) FROM referrals WHERE inviter_id = $1", tg_id)
+        voted = await conn.fetchval(
+            "SELECT COUNT(*) FROM referrals WHERE inviter_id = $1 AND invited_voted = 1",
+            tg_id
+        )
+        return {"total": total or 0, "voted": voted or 0}
 
 
 def get_referral_link(tg_id: int, bot_username: str) -> str:
@@ -214,112 +198,112 @@ def get_referral_link(tg_id: int, bot_username: str) -> str:
 
 async def get_stats() -> Dict[str, Any]:
     """Jami bot statistikasini olish"""
-    async with await get_conn() as conn:
-        async with conn.execute("SELECT COUNT(*) FROM users") as cursor:
-            total_users = (await cursor.fetchone())[0]
-        async with conn.execute("SELECT COUNT(*) FROM votes") as cursor:
-            total_votes = (await cursor.fetchone())[0]
-        async with conn.execute("SELECT COUNT(*) FROM votes WHERE confirmed = 1") as cursor:
-            confirmed = (await cursor.fetchone())[0]
-        async with conn.execute(
-            "SELECT COUNT(*) FROM votes WHERE date(voted_at) = date('now','localtime')"
-        ) as cursor:
-            today_votes = (await cursor.fetchone())[0]
-        async with conn.execute("SELECT COUNT(*) FROM referrals") as cursor:
-            total_refs = (await cursor.fetchone())[0]
-        async with conn.execute(
+    async with get_conn() as conn:
+        total_users = await conn.fetchval("SELECT COUNT(*) FROM users")
+        total_votes = await conn.fetchval("SELECT COUNT(*) FROM votes")
+        confirmed = await conn.fetchval("SELECT COUNT(*) FROM votes WHERE confirmed = 1")
+        today_votes = await conn.fetchval(
+            "SELECT COUNT(*) FROM votes WHERE CAST(voted_at AS DATE) = CURRENT_DATE"
+        )
+        total_refs = await conn.fetchval("SELECT COUNT(*) FROM referrals")
+        pending_pays = await conn.fetchval(
             "SELECT COUNT(*) FROM payment_requests WHERE status = 'pending'"
-        ) as cursor:
-            pending_pays = (await cursor.fetchone())[0]
-        async with conn.execute(
+        )
+        paid_count = await conn.fetchval(
             "SELECT COUNT(*) FROM payment_requests WHERE status = 'paid'"
-        ) as cursor:
-            paid_count = (await cursor.fetchone())[0]
-        async with conn.execute(
-            "SELECT COALESCE(SUM(amount),0) FROM payment_requests WHERE status = 'paid'"
-        ) as cursor:
-            total_paid_sum = (await cursor.fetchone())[0]
+        )
+        total_paid_sum = await conn.fetchval(
+            "SELECT COALESCE(SUM(amount), 0) FROM payment_requests WHERE status = 'paid'"
+        )
 
         return {
-            "total_users": total_users,
-            "total_votes": total_votes,
-            "confirmed": confirmed,
-            "today_votes": today_votes,
-            "total_refs": total_refs,
-            "pending_pays": pending_pays,
-            "paid_count": paid_count,
-            "total_paid_sum": total_paid_sum,
+            "total_users": total_users or 0,
+            "total_votes": total_votes or 0,
+            "confirmed": confirmed or 0,
+            "today_votes": today_votes or 0,
+            "total_refs": total_refs or 0,
+            "pending_pays": pending_pays or 0,
+            "paid_count": paid_count or 0,
+            "total_paid_sum": total_paid_sum or 0,
         }
 
 
 async def get_votes_list(limit: int = 20, offset: int = 0) -> List[Dict[str, Any]]:
     """Ovozlar ro'yxatini olish"""
-    async with await get_conn() as conn:
-        async with conn.execute("""
+    async with get_conn() as conn:
+        rows = await conn.fetch("""
             SELECT v.id, v.tg_id, v.phone, v.voted_at, v.confirmed,
                    u.username, u.full_name
             FROM votes v
             LEFT JOIN users u ON v.tg_id = u.tg_id
             ORDER BY v.id DESC
-            LIMIT ? OFFSET ?
-        """, (limit, offset)) as cursor:
-            rows = await cursor.fetchall()
-            return [dict(r) for r in rows]
+            LIMIT $1 OFFSET $2
+        """, limit, offset)
+        return [dict(r) for r in rows]
 
 
 async def get_top_referrers(limit: int = 10) -> List[Dict[str, Any]]:
     """Eng ko'p taklif qilganlarni olish"""
-    async with await get_conn() as conn:
-        async with conn.execute("""
+    async with get_conn() as conn:
+        rows = await conn.fetch("""
             SELECT r.inviter_id, u.username, u.full_name,
                    COUNT(*) as total,
                    SUM(r.invited_voted) as voted_count
             FROM referrals r
             LEFT JOIN users u ON r.inviter_id = u.tg_id
-            GROUP BY r.inviter_id
+            GROUP BY r.inviter_id, u.username, u.full_name
             ORDER BY voted_count DESC, total DESC
-            LIMIT ?
-        """, (limit,)) as cursor:
-            rows = await cursor.fetchall()
-            return [dict(r) for r in rows]
+            LIMIT $1
+        """, limit)
+        return [dict(r) for r in rows]
 
 
 async def get_all_payments(status: Optional[str] = None, limit: int = 20, offset: int = 0) -> List[Dict[str, Any]]:
     """To'lovlar ro'yxatini olish"""
-    async with await get_conn() as conn:
+    async with get_conn() as conn:
         if status:
-            async with conn.execute("""
+            rows = await conn.fetch("""
                 SELECT p.*, u.username, u.full_name as u_full_name
                 FROM payment_requests p
                 LEFT JOIN users u ON p.tg_id = u.tg_id
-                WHERE p.status = ?
-                ORDER BY p.id DESC LIMIT ? OFFSET ?
-            """, (status, limit, offset)) as cursor:
-                rows = await cursor.fetchall()
+                WHERE p.status = $1
+                ORDER BY p.id DESC LIMIT $2 OFFSET $3
+            """, status, limit, offset)
         else:
-            async with conn.execute("""
+            rows = await conn.fetch("""
                 SELECT p.*, u.username, u.full_name as u_full_name
                 FROM payment_requests p
                 LEFT JOIN users u ON p.tg_id = u.tg_id
-                ORDER BY p.id DESC LIMIT ? OFFSET ?
-            """, (limit, offset)) as cursor:
-                rows = await cursor.fetchall()
+                ORDER BY p.id DESC LIMIT $1 OFFSET $2
+            """, limit, offset)
         return [dict(r) for r in rows]
 
 
 async def search_users(query: str) -> List[Dict[str, Any]]:
     """Foydalanuvchilarni qidirish"""
-    async with await get_conn() as conn:
+    async with get_conn() as conn:
         if query.isdigit():
-            async with conn.execute("""
+            rows = await conn.fetch("""
                 SELECT * FROM users 
-                WHERE tg_id = ? OR phone LIKE ? OR phone LIKE ?
-            """, (int(query), f"%{query}%", f"%{query.strip('+')}%")) as cursor:
-                rows = await cursor.fetchall()
+                WHERE tg_id = $1 OR phone LIKE $2 OR phone LIKE $3
+            """, int(query), f"%{query}%", f"%{query.strip('+')}%")
         else:
-            async with conn.execute("""
+            rows = await conn.fetch("""
                 SELECT * FROM users 
-                WHERE username LIKE ? OR full_name LIKE ?
-            """, (f"%{query}%", f"%{query}%")) as cursor:
-                rows = await cursor.fetchall()
+                WHERE username LIKE $1 OR full_name LIKE $2
+            """, f"%{query}%", f"%{query}%")
         return [dict(r) for r in rows]
+
+
+# ==============================================================================
+# AUDIT LOGS
+# ==============================================================================
+
+async def add_audit_log(admin_id: int, action: str, target_id: Optional[int] = None, details: Optional[str] = None) -> None:
+    """Audit log yozuvini qo'shish"""
+    async with get_conn() as conn:
+        await conn.execute(
+            """INSERT INTO audit_logs (admin_id, action, target_id, details)
+               VALUES ($1, $2, $3, $4)""",
+            admin_id, action, target_id, details
+        )

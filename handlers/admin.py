@@ -112,7 +112,7 @@ async def admin_pending_payments(message: types.Message) -> None:
             f"💰 {p['amount']:,} so'm\n"
             f"🕐 {p['requested_at'][:16]}"
         )
-        await message.answer(text, reply_markup=kb.payment_action_keyboard(p["id"]))
+        await message.answer(text, reply_markup=kb.payment_action_keyboard(p["id"], p["card_number"], p["amount"]))
 
 
 @router.message(F.text == "✅ To'langan to'lovlar")
@@ -307,7 +307,7 @@ async def process_admin_waiting_note(message: types.Message, state: FSMContext) 
                 payment["tg_id"],
                 f"❌ <b>To'lov so'rovingiz rad etildi.</b>\n\n"
                 f"📝 Sababi: {note}\n\n"
-                f"Muammo bo'lsa admin bilan bog'laning: @joshqinjumayev",
+                f"Muammo bo'lsa admin bilan bog'laning: {config.ADMIN_TELEGRAM}",
             )
         except Exception as e:
             logger.warning("Foydalanuvchiga xabar yuborilmadi: %s", e)
