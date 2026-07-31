@@ -1,0 +1,30 @@
+2026-07-31 02:20:19,467 [INFO] __main__: Bot ishga tushdi | Asosiy adminlar: [5256286450, 6559878728, 5678281376, 991729905]
+2026-07-31 02:20:19,469 [INFO] aiogram.dispatcher: Start polling
+2026-07-31 02:20:19,471 [INFO] handlers.api: Web API Server 8000 portda ishga tushdi.
+2026-07-31 02:20:19,787 [INFO] aiogram.dispatcher: Run polling for bot @open_budget_1102_bot id=8584314885 - 'Open Budget bot'
+2026-07-31 02:21:04,432 [INFO] aiogram.event: Update id=405903136 is handled. Duration 1850 ms by bot id=8584314885
+2026-07-31 02:21:25,413 [INFO] aiogram.event: Update id=405903137 is handled. Duration 468 ms by bot id=8584314885
+2026-07-31 02:22:00,108 [WARNING] handlers.admin: Admin 6559878728 ga xabar yuborilmadi: Telegram server says - Bad Request: chat not found
+2026-07-31 02:22:00,273 [WARNING] handlers.admin: Admin 5678281376 ga xabar yuborilmadi: Telegram server says - Bad Request: chat not found
+2026-07-31 02:22:00,408 [INFO] aiogram.event: Update id=405903138 is handled. Duration 3005 ms by bot id=8584314885
+2026-07-31 02:22:19,831 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:22:19 +0500] "GET / HTTP/1.1" 200 236 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 02:22:19,860 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:22:19 +0500] "GET /assets/index-Cq8uKMw6.js HTTP/1.1" 200 247 "http://localhost:8000/" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 02:22:19,860 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:22:19 +0500] "GET /assets/index-BFa6uoZG.css HTTP/1.1" 200 238 "http://localhost:8000/" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 02:22:19,867 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:22:19 +0500] "GET /assets/index-Cq8uKMw6.js HTTP/1.1" 304 180 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+2026-07-31 02:22:19,882 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:22:19 +0500] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 405 208 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+2026-07-31 02:22:20,558 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:22:20 +0500] "GET /favicon.svg HTTP/1.1" 405 208 "http://localhost:8000/" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 02:23:30,997 [INFO] aiogram.event: Update id=405903139 is handled. Duration 2047 ms by bot id=8584314885
+2026-07-31 02:23:54,458 [INFO] aiogram.event: Update id=405903140 is handled. Duration 826 ms by bot id=8584314885
+2026-07-31 02:24:09,943 [INFO] aiogram.event: Update id=405903141 is handled. Duration 9058 ms by bot id=8584314885
+2026-07-31 02:24:30,146 [INFO] aiogram.event: Update id=405903142 is handled. Duration 7796 ms by bot id=8584314885
+2026-07-31 02:25:31,282 [INFO] aiogram.event: Update id=405903143 is handled. Duration 1077 ms by bot id=8584314885
+2026-07-31 02:25:35,403 [INFO] aiogram.event: Update id=405903144 is handled. Duration 908 ms by bot id=8584314885
+2026-07-31 02:25:41,940 [INFO] aiogram.event: Update id=405903145 is handled. Duration 971 ms by bot id=8584314885
+2026-07-31 02:26:06,170 [INFO] aiogram.event: Update id=405903146 is handled. Duration 1260 ms by bot id=8584314885
+2026-07-31 02:26:10,432 [INFO] aiogram.event: Update id=405903147 is handled. Duration 2449 ms by bot id=8584314885
+2026-07-31 02:26:15,714 [INFO] aiogram.event: Update id=405903148 is handled. Duration 729 ms by bot id=8584314885
+2026-07-31 02:26:18,101 [INFO] aiogram.event: Update id=405903149 is handled. Duration 796 ms by bot id=8584314885
+2026-07-31 02:26:21,034 [INFO] aiogram.event: Update id=405903150 is handled. Duration 325 ms by bot id=8584314885
+2026-07-31 02:26:24,244 [INFO] aiogram.event: Update id=405903151 is handled. Duration 394 ms by bot id=8584314885
+2026-07-31 02:27:16,655 [INFO] aiogram.event: Update id=405903152 is handled. Duration 1601 ms by bot id=8584314885
+2026-07-31 02:27:20,828 [INFO] aiogram.event: Update id=405903153 is handled. Duration 1063 ms by bot id=8584314885

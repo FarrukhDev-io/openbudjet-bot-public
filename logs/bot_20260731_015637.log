@@ -1,0 +1,7 @@
+2026-07-31 01:56:42,430 [INFO] __main__: Bot ishga tushdi | Asosiy adminlar: [5256286450, 6559878728, 5678281376, 991729905]
+2026-07-31 01:56:42,430 [INFO] aiogram.dispatcher: Start polling
+2026-07-31 01:56:42,432 [INFO] handlers.api: Web API Server 8000 portda ishga tushdi.
+2026-07-31 01:56:42,774 [INFO] aiogram.dispatcher: Run polling for bot @open_budget_1102_bot id=8584314885 - 'Open Budget bot'
+2026-07-31 01:57:05,242 [WARNING] aiogram.dispatcher: Received SIGTERM signal
+2026-07-31 01:57:05,243 [INFO] aiogram.dispatcher: Polling stopped for bot @open_budget_1102_bot id=8584314885 - 'Open Budget bot'
+2026-07-31 01:57:05,243 [INFO] aiogram.dispatcher: Polling stopped

@@ -70,10 +70,12 @@ async def api_payment_action(request: web.Request) -> web.Response:
                 reply_markup=keyboard,
             )
         else:
+            await db.add_balance(payment["tg_id"], payment["amount"])
             await bot.send_message(
                 payment["tg_id"],
                 f"❌ <b>To'lov so'rovingiz rad etildi.</b>\n\n"
-                f"📝 <b>Sabab:</b> {note}",
+                f"📝 <b>Sabab:</b> {note}\n"
+                f"💰 <b>{payment['amount']:,} so'm</b> balansingizga qaytarildi!",
             )
     except Exception as e:
         logger.warning("Foydalanuvchiga API orqali xabar ketmadi: %s", e)

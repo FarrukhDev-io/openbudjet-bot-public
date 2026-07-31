@@ -2,3 +2,86 @@
 2026-07-31 01:33:18,005 [INFO] aiogram.dispatcher: Start polling
 2026-07-31 01:33:18,007 [INFO] handlers.api: Web API Server 8000 portda ishga tushdi.
 2026-07-31 01:33:18,981 [INFO] aiogram.dispatcher: Run polling for bot @open_budget_1102_bot id=8584314885 - 'Open Budget bot'
+2026-07-31 01:34:55,547 [INFO] aiogram.event: Update id=405903121 is handled. Duration 1432 ms by bot id=8584314885
+2026-07-31 01:36:27,134 [INFO] aiogram.event: Update id=405903122 is handled. Duration 910 ms by bot id=8584314885
+2026-07-31 01:37:58,687 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:01:37:58 +0500] "GET / HTTP/1.1" 200 236 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 01:37:58,718 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:01:37:58 +0500] "GET /assets/index-BFa6uoZG.css HTTP/1.1" 200 238 "http://localhost:8000/" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 01:37:58,718 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:01:37:58 +0500] "GET /assets/index-Cq8uKMw6.js HTTP/1.1" 200 247 "http://localhost:8000/" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 01:37:58,725 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:01:37:58 +0500] "GET /assets/index-Cq8uKMw6.js HTTP/1.1" 200 247 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+2026-07-31 01:37:58,734 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:01:37:58 +0500] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 405 208 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+2026-07-31 01:37:59,899 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:01:37:59 +0500] "GET /favicon.svg HTTP/1.1" 405 208 "http://localhost:8000/" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 01:40:49,695 [ERROR] aiogram.dispatcher: Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2026-07-31 01:40:49,695 [WARNING] aiogram.dispatcher: Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8584314885)
+2026-07-31 01:41:01,069 [INFO] aiogram.dispatcher: Connection established (tryings = 1, bot id = 8584314885)
+2026-07-31 01:56:00,695 [INFO] aiogram.event: Update id=405903123 is not handled. Duration 1781 ms by bot id=8584314885
+2026-07-31 01:56:00,695 [ERROR] aiogram.event: Cause exception while process update id=405903123 by bot id=8584314885
+AttributeError: module 'database' has no attribute 'get_balance'
+Traceback (most recent call last):
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 320, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/fsm/middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 283, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 195, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 187, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/handlers/user.py", line 115, in cmd_balance
+    balance = await db.get_balance(user_id)
+                    ^^^^^^^^^^^^^^
+AttributeError: module 'database' has no attribute 'get_balance'
+2026-07-31 01:56:07,305 [INFO] aiogram.event: Update id=405903124 is handled. Duration 1301 ms by bot id=8584314885
+2026-07-31 01:56:15,551 [INFO] aiogram.event: Update id=405903125 is handled. Duration 698 ms by bot id=8584314885
+2026-07-31 01:56:20,144 [INFO] aiogram.event: Update id=405903126 is handled. Duration 877 ms by bot id=8584314885
+2026-07-31 01:56:22,940 [INFO] aiogram.event: Update id=405903127 is handled. Duration 677 ms by bot id=8584314885
+2026-07-31 01:56:35,299 [WARNING] aiogram.dispatcher: Received SIGTERM signal
+2026-07-31 01:56:35,300 [INFO] aiogram.dispatcher: Polling stopped for bot @open_budget_1102_bot id=8584314885 - 'Open Budget bot'
+2026-07-31 01:56:35,300 [INFO] aiogram.dispatcher: Polling stopped

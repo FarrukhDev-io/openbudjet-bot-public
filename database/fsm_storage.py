@@ -20,10 +20,17 @@ class PgFSMStorage(BaseStorage):
     Barcha state va data PostgreSQL `fsm_storage` jadvalida saqlanadi.
     """
 
-    async def set_state(self, key: StorageKey, state: Optional[str] = None) -> None:
+    async def set_state(self, key: StorageKey, state: Optional[Any] = None) -> None:
         """FSM holatini o'rnatish yoki o'chirish."""
+        state_str = None
+        if state is not None:
+            if hasattr(state, "state"):
+                state_str = state.state
+            else:
+                state_str = str(state)
+
         async with get_conn() as conn:
-            if state is None:
+            if state_str is None:
                 await conn.execute(
                     "DELETE FROM fsm_storage WHERE chat_id = $1 AND user_id = $2",
                     key.chat_id,
@@ -40,7 +47,7 @@ class PgFSMStorage(BaseStorage):
                     """,
                     key.chat_id,
                     key.user_id,
-                    state,
+                    state_str,
                 )
 
     async def get_state(self, key: StorageKey) -> Optional[str]:

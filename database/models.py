@@ -141,13 +141,13 @@ async def has_voted(tg_id: int) -> bool:
 # PAYMENT REQUESTS
 # ==============================================================================
 
-async def add_payment_request(tg_id: int, phone: str, full_name: str, card_number: str) -> int:
+async def add_payment_request(tg_id: int, phone: str, full_name: str, card_number: str, amount: int = 15000) -> int:
     """To'lov so'rovi qo'shish va yangi row ID sini qaytarish"""
     async with get_conn() as conn:
         row_id = await conn.fetchval(
-            """INSERT INTO payment_requests (tg_id, phone, full_name, card_number)
-               VALUES ($1, $2, $3, $4) RETURNING id""",
-            tg_id, phone, full_name, card_number
+            """INSERT INTO payment_requests (tg_id, phone, full_name, card_number, amount)
+               VALUES ($1, $2, $3, $4, $5) RETURNING id""",
+            tg_id, phone, full_name, card_number, amount
         )
         return row_id
 

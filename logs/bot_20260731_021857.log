@@ -1,0 +1,220 @@
+2026-07-31 02:19:02,513 [INFO] __main__: Bot ishga tushdi | Asosiy adminlar: [5256286450, 6559878728, 5678281376, 991729905]
+2026-07-31 02:19:02,514 [INFO] aiogram.dispatcher: Start polling
+2026-07-31 02:19:02,516 [INFO] handlers.api: Web API Server 8000 portda ishga tushdi.
+2026-07-31 02:19:02,869 [INFO] aiogram.dispatcher: Run polling for bot @open_budget_1102_bot id=8584314885 - 'Open Budget bot'
+2026-07-31 02:19:04,262 [INFO] aiogram.event: Update id=405903133 is handled. Duration 1263 ms by bot id=8584314885
+2026-07-31 02:19:09,907 [INFO] aiogram.event: Update id=405903134 is not handled. Duration 1077 ms by bot id=8584314885
+2026-07-31 02:19:09,907 [ERROR] aiogram.event: Cause exception while process update id=405903134 by bot id=8584314885
+DataError: invalid input for query argument $3: <State 'VoteState:waiting_for_card'> (expected str, got State)
+Traceback (most recent call last):
+  File "asyncpg/protocol/prepared_stmt.pyx", line 175, in asyncpg.protocol.protocol.PreparedStatementState._encode_bind_msg
+  File "asyncpg/protocol/codecs/base.pyx", line 251, in asyncpg.protocol.protocol.Codec.encode
+  File "asyncpg/protocol/codecs/base.pyx", line 153, in asyncpg.protocol.protocol.Codec.encode_scalar
+    self.c_encoder(settings, buf, obj)
+  File "asyncpg/pgproto/codecs/text.pyx", line 29, in asyncpg.pgproto.pgproto.text_encode
+  File "asyncpg/pgproto/codecs/text.pyx", line 12, in asyncpg.pgproto.pgproto.as_pg_string_and_size
+    raise TypeError('expected str, got {}'.format(type(obj).__name__))
+TypeError: expected str, got State
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 320, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/fsm/middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 283, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 195, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 187, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/handlers/user.py", line 165, in callback_request_withdraw
+    await state.set_state(VoteState.waiting_for_card)
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/fsm/context.py", line 13, in set_state
+    await self.storage.set_state(key=self.key, state=state)
+  File "/home/farrukh/Frontend/openbudjet-bot/database/fsm_storage.py", line 33, in set_state
+    await conn.execute(
+    ...<10 lines>...
+    )
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connection.py", line 357, in execute
+    _, status, _ = await self._execute(
+                   ^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connection.py", line 1873, in _execute
+    result, _ = await self.__execute(
+                ^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connection.py", line 1970, in __execute
+    result, stmt = await self._do_execute(
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connection.py", line 2033, in _do_execute
+    result = await executor(stmt, None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 184, in bind_execute
+  File "asyncpg/protocol/prepared_stmt.pyx", line 204, in asyncpg.protocol.protocol.PreparedStatementState._encode_bind_msg
+asyncpg.exceptions.DataError: invalid input for query argument $3: <State 'VoteState:waiting_for_card'> (expected str, got State)
+2026-07-31 02:19:16,582 [INFO] aiogram.event: Update id=405903135 is not handled. Duration 1002 ms by bot id=8584314885
+2026-07-31 02:19:16,583 [ERROR] aiogram.event: Cause exception while process update id=405903135 by bot id=8584314885
+DataError: invalid input for query argument $3: <State 'VoteState:waiting_for_card'> (expected str, got State)
+Traceback (most recent call last):
+  File "asyncpg/protocol/prepared_stmt.pyx", line 175, in asyncpg.protocol.protocol.PreparedStatementState._encode_bind_msg
+  File "asyncpg/protocol/codecs/base.pyx", line 251, in asyncpg.protocol.protocol.Codec.encode
+    return self.encoder(self, settings, buf, obj)
+  File "asyncpg/protocol/codecs/base.pyx", line 153, in asyncpg.protocol.protocol.Codec.encode_scalar
+    self.c_encoder(settings, buf, obj)
+  File "asyncpg/pgproto/codecs/text.pyx", line 29, in asyncpg.pgproto.pgproto.text_encode
+    as_pg_string_and_size(settings, obj, &str, &size)
+  File "asyncpg/pgproto/codecs/text.pyx", line 12, in asyncpg.pgproto.pgproto.as_pg_string_and_size
+    raise TypeError('expected str, got {}'.format(type(obj).__name__))
+TypeError: expected str, got State
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 320, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/fsm/middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 283, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 195, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 187, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/handlers/user.py", line 165, in callback_request_withdraw
+    await state.set_state(VoteState.waiting_for_card)
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/fsm/context.py", line 13, in set_state
+    await self.storage.set_state(key=self.key, state=state)
+  File "/home/farrukh/Frontend/openbudjet-bot/database/fsm_storage.py", line 33, in set_state
+    await conn.execute(
+    ...<10 lines>...
+    )
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connection.py", line 357, in execute
+    _, status, _ = await self._execute(
+                   ^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connection.py", line 1873, in _execute
+    result, _ = await self.__execute(
+                ^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connection.py", line 1970, in __execute
+    result, stmt = await self._do_execute(
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/asyncpg/connection.py", line 2033, in _do_execute
+    result = await executor(stmt, None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 184, in bind_execute
+  File "asyncpg/protocol/prepared_stmt.pyx", line 204, in asyncpg.protocol.protocol.PreparedStatementState._encode_bind_msg
+asyncpg.exceptions.DataError: invalid input for query argument $3: <State 'VoteState:waiting_for_card'> (expected str, got State)
+2026-07-31 02:20:12,294 [WARNING] aiogram.dispatcher: Received SIGTERM signal
+2026-07-31 02:20:12,295 [INFO] aiogram.dispatcher: Polling stopped for bot @open_budget_1102_bot id=8584314885 - 'Open Budget bot'
+2026-07-31 02:20:12,295 [INFO] aiogram.dispatcher: Polling stopped

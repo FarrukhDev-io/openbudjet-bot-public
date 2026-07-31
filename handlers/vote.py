@@ -372,6 +372,27 @@ async def process_otp(message: types.Message, state: FSMContext, session: aiohtt
         await db.add_vote(tg_id=message.from_user.id, phone=phone_number)
         await db.set_user_phone(message.from_user.id, phone_number)
         await db.add_balance(message.from_user.id, config.REWARD_AMOUNT)
+
+        # Check for inviter and award referral bonus
+        db_user = await db.get_user(message.from_user.id)
+        if db_user and db_user.get("ref_by"):
+            inviter_id = db_user["ref_by"]
+            await db.add_balance(inviter_id, config.REFERRAL_REWARD)
+            # Update referrals table
+            async with db.get_conn() as conn:
+                await conn.execute(
+                    "UPDATE referrals SET invited_voted = 1 WHERE invited_id = $1",
+                    message.from_user.id
+                )
+            try:
+                await message.bot.send_message(
+                    inviter_id,
+                    f"🎉 Taklif qilgan do'stingiz +{phone_number} ovoz berdi!\n"
+                    f"💰 Balansingizga <b>{config.REFERRAL_REWARD:,} so'm</b> bonus qo'shildi!"
+                )
+            except Exception as ref_err:
+                logger.warning("Inviter %d ga xabar yuborilmadi: %s", inviter_id, ref_err)
+
         new_balance = await db.get_balance(message.from_user.id)
         logger.info("Ovoz berildi | tg_id=%d | phone=%s | new_balance=%d", message.from_user.id, phone_number, new_balance)
 
@@ -380,11 +401,10 @@ async def process_otp(message: types.Message, state: FSMContext, session: aiohtt
             f"✅ <a href='{config.INITIATIVE_URL}'>Loyiha</a>ga ovoz muvaffaqiyatli berildi!\n\n"
             f"💰 <b>{config.REWARD_AMOUNT:,} so'm</b> hisobingizga qo'shildi!\n"
             f"📊 Joriy balansingiz: <b>{new_balance:,} so'm</b>\n\n"
-            "💳 Pul olish uchun karta raqamingizni kiriting:\n"
-            "<i>(16 ta raqam, bo'sh joylarsiz)</i>",
+            "💳 Pulni yechib olish uchun bosh sahifadagi <b>💰 Balansim</b> bo'limiga o'ting.",
+            reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id))
         )
-        await message.answer("Karta raqamini kiriting:", reply_markup=kb.cancel_keyboard())
-        await state.set_state(VoteState.waiting_for_card)
+        await state.clear()
 
     except ValueError as e:
         logger.warning("Verify OTP value warning: %s", e)
@@ -401,8 +421,7 @@ async def process_card(message: types.Message, state: FSMContext) -> None:
     if message.text == "❌ Bekor qilish":
         await state.clear()
         await message.answer(
-            "⚠️ Karta raqami kiritilmadi.\n"
-            "Keyinroq «🗳 Ovoz berish» tugmasini bosib karta raqamingizni kiritishingiz mumkin.",
+            "🏠 Bosh sahifa",
             reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)),
         )
         return
@@ -422,20 +441,34 @@ async def process_card(message: types.Message, state: FSMContext) -> None:
     db_user = await db.get_user(user.id)
     phone = db_user.get("phone", "") if db_user else ""
     full_name = user.full_name or ""
+    balance = await db.get_balance(user.id)
 
+    if balance <= 0:
+        await state.clear()
+        await message.answer(
+            "❌ Balansingizda pul qolmagan yoki allaqachon to'lov so'rovi yuborilgan.",
+            reply_markup=kb.main_keyboard(is_user_admin=is_admin(user.id))
+        )
+        return
+
+    # Add payment request with the user's full balance
     request_id = await db.add_payment_request(
         tg_id=user.id,
         phone=phone,
         full_name=full_name,
         card_number=card,
+        amount=balance
     )
+
+    # Deduct balance immediately to prevent double spending
+    await db.deduct_balance(user.id, balance)
 
     await state.clear()
 
     await message.answer(
         f"✅ <b>Karta raqami qabul qilindi!</b>\n\n"
         f"💳 Karta: <code>{utils.mask_card(card)}</code>\n"
-        f"💰 Miqdor: <b>{config.REWARD_AMOUNT:,} so'm</b>\n\n"
+        f"💰 Miqdor: <b>{balance:,} so'm</b>\n\n"
         "⏳ <b>Admin tasdiqlashini kuting.</b>\n"
         "Tasdiqlash <b>4–6 soat</b> vaqt olishi mumkin.\n\n"
         "✅ Tasdiqlanganda sizga xabar yuboriladi.",
@@ -450,12 +483,12 @@ async def process_card(message: types.Message, state: FSMContext) -> None:
         f"📱 Username: {username_str}\n"
         f"📞 Telefon: +{phone}\n"
         f"💳 Karta: <code>{card}</code>\n"
-        f"💰 Miqdor: <b>{config.REWARD_AMOUNT:,} so'm</b>"
+        f"💰 Miqdor: <b>{balance:,} so'm</b>"
     )
     # Import locally to avoid circular dependency
     from handlers.admin import notify_admins
     await notify_admins(
         message.bot,
         admin_text,
-        reply_markup=kb.payment_action_keyboard(request_id, card, config.REWARD_AMOUNT),
+        reply_markup=kb.payment_action_keyboard(request_id, card, balance),
     )

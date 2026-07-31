@@ -50,3 +50,9 @@ def initiative_inline_keyboard() -> InlineKeyboardMarkup:
     builder.row(InlineKeyboardButton(text="🌐 Saytda ko'rish", url=config.INITIATIVE_URL))
     builder.row(InlineKeyboardButton(text="🗳 Ovoz berish", callback_data="start_vote"))
     return builder.as_markup()
+
+
+def withdraw_inline_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="📤 Pulni yechib olish", callback_data="request_withdraw"))
+    return builder.as_markup()

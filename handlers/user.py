@@ -130,12 +130,44 @@ async def cmd_balance(message: types.Message) -> None:
     else:
         payment_text = "\n\n💳 Hali to'lov so'rovi yo'q"
 
-    await message.answer(
+    text = (
         f"💰 <b>Hisobingiz</b>\n\n"
         f"📊 Joriy balans: <b>{balance:,} so'm</b>\n"
         f"🎁 Ovoz uchun mukofot: <b>{config.REWARD_AMOUNT:,} so'm</b>"
-        f"{payment_text}",
-        reply_markup=kb.main_keyboard(is_user_admin=is_admin(user_id)),
+        f"{payment_text}"
+    )
+
+    if balance > 0:
+        await message.answer(text, reply_markup=kb.withdraw_inline_keyboard())
+    else:
+        await message.answer(text, reply_markup=kb.main_keyboard(is_user_admin=is_admin(user_id)))
+
+
+@router.callback_query(F.data == "request_withdraw")
+async def callback_request_withdraw(callback: types.CallbackQuery, state: FSMContext) -> None:
+    await callback.answer()
+    user_id = callback.from_user.id
+    balance = await db.get_balance(user_id)
+
+    if balance <= 0:
+        await callback.message.answer("❌ Sizning balansingizda mablag' yo'q.")
+        return
+
+    payment = await db.get_user_payment(user_id)
+    if payment and payment["status"] == "pending":
+        await callback.message.answer(
+            "❌ Sizda kutilayotgan to'lov so'rovi bor. "
+            "U to'langandan so'ng qayta urinib ko'ring."
+        )
+        return
+
+    from handlers.vote import VoteState
+    await state.set_state(VoteState.waiting_for_card)
+    await callback.message.answer(
+        "💳 <b>Pul yechib olish</b>\n\n"
+        f"Yechib olinadigan summa: <b>{balance:,} so'm</b>\n\n"
+        "Pullarni yechish uchun 16 xonali Uzcard yoki Humo karta raqamingizni yuboring:",
+        reply_markup=kb.cancel_keyboard()
     )
 
 

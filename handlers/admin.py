@@ -189,13 +189,13 @@ async def callback_pay_confirm(callback: types.CallbackQuery) -> None:
     await callback.answer("✅ To'lov tasdiqlandi!")
 
     try:
-        await db.deduct_balance(payment["tg_id"], payment["amount"])
+        current_balance = await db.get_balance(payment["tg_id"])
         await callback.bot.send_message(
             payment["tg_id"],
             f"🎉 <b>To'lovingiz amalga oshirildi!</b>\n\n"
             f"💰 <b>{payment['amount']:,} so'm</b> kartangizga o'tkazildi.\n"
             f"💳 Karta: <code>{utils.mask_card(payment['card_number'])}</code>\n\n"
-            f"📊 Joriy balans: <b>0 so'm</b>\n\n"
+            f"📊 Joriy balans: <b>{current_balance:,} so'm</b>\n\n"
             "🙏 Ovoz berganligi uchun rahmat!\n"
             "Do'stlaringizni ham taklif qiling 👥",
         )
@@ -283,9 +283,10 @@ async def process_admin_waiting_note(message: types.Message, state: FSMContext) 
             return
 
         await db.update_payment_status(reject_request_id, "rejected", message.from_user.id, note)
+        await db.add_balance(payment["tg_id"], payment["amount"])
 
         await message.answer(
-            f"❌ <b>To'lov so'rovi #{reject_request_id} rad etildi.</b>\n"
+            f"❌ <b>To'lov so'rovi #{reject_request_id} rad etildi va pul balansga qaytarildi.</b>\n"
             f"Eslatma: <i>{note}</i>",
             reply_markup=kb.admin_main_keyboard()
         )
@@ -307,7 +308,8 @@ async def process_admin_waiting_note(message: types.Message, state: FSMContext) 
             await message.bot.send_message(
                 payment["tg_id"],
                 f"❌ <b>To'lov so'rovingiz rad etildi.</b>\n\n"
-                f"📝 Sababi: {note}\n\n"
+                f"📝 Sababi: {note}\n"
+                f"💰 <b>{payment['amount']:,} so'm</b> balansingizga qaytarildi!\n\n"
                 f"Muammo bo'lsa admin bilan bog'laning: {config.ADMIN_TELEGRAM}",
             )
         except Exception as e:

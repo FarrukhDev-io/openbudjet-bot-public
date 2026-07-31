@@ -1,0 +1,210 @@
+2026-07-31 01:57:12,338 [INFO] __main__: Bot ishga tushdi | Asosiy adminlar: [5256286450, 6559878728, 5678281376, 991729905]
+2026-07-31 01:57:12,339 [INFO] aiogram.dispatcher: Start polling
+2026-07-31 01:57:12,340 [INFO] handlers.api: Web API Server 8000 portda ishga tushdi.
+2026-07-31 01:57:12,743 [INFO] aiogram.dispatcher: Run polling for bot @open_budget_1102_bot id=8584314885 - 'Open Budget bot'
+2026-07-31 02:09:05,329 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:09:05 +0500] "GET / HTTP/1.1" 200 236 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 02:09:05,357 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:09:05 +0500] "GET /assets/index-Cq8uKMw6.js HTTP/1.1" 200 247 "http://localhost:8000/" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 02:09:05,358 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:09:05 +0500] "GET /assets/index-BFa6uoZG.css HTTP/1.1" 200 238 "http://localhost:8000/" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 02:09:05,362 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:09:05 +0500] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 405 208 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+2026-07-31 02:09:05,364 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:09:05 +0500] "GET /assets/index-Cq8uKMw6.js HTTP/1.1" 304 180 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+2026-07-31 02:09:06,588 [INFO] aiohttp.access: 127.0.0.1 [31/Jul/2026:02:09:06 +0500] "GET /favicon.svg HTTP/1.1" 405 208 "http://localhost:8000/" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2026-07-31 02:17:45,037 [INFO] aiogram.event: Update id=405903128 is handled. Duration 2391 ms by bot id=8584314885
+2026-07-31 02:17:48,859 [INFO] aiogram.event: Update id=405903129 is not handled. Duration 932 ms by bot id=8584314885
+2026-07-31 02:17:48,859 [ERROR] aiogram.event: Cause exception while process update id=405903129 by bot id=8584314885
+AttributeError: module 'keyboards' has no attribute 'withdraw_inline_keyboard'
+Traceback (most recent call last):
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 320, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/fsm/middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 283, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 195, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 187, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/handlers/user.py", line 141, in cmd_balance
+    await message.answer(text, reply_markup=kb.withdraw_inline_keyboard())
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'keyboards' has no attribute 'withdraw_inline_keyboard'. Did you mean: 'initiative_inline_keyboard'?
+2026-07-31 02:18:06,056 [INFO] aiogram.event: Update id=405903130 is not handled. Duration 711 ms by bot id=8584314885
+2026-07-31 02:18:06,056 [ERROR] aiogram.event: Cause exception while process update id=405903130 by bot id=8584314885
+AttributeError: module 'keyboards' has no attribute 'withdraw_inline_keyboard'
+Traceback (most recent call last):
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 320, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/fsm/middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 283, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 195, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 187, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/handlers/user.py", line 141, in cmd_balance
+    await message.answer(text, reply_markup=kb.withdraw_inline_keyboard())
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'keyboards' has no attribute 'withdraw_inline_keyboard'. Did you mean: 'initiative_inline_keyboard'?
+2026-07-31 02:18:39,181 [INFO] aiogram.event: Update id=405903131 is not handled. Duration 683 ms by bot id=8584314885
+2026-07-31 02:18:39,181 [ERROR] aiogram.event: Cause exception while process update id=405903131 by bot id=8584314885
+AttributeError: module 'keyboards' has no attribute 'withdraw_inline_keyboard'
+Traceback (most recent call last):
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 320, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/middlewares/user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/fsm/middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/dispatcher.py", line 283, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 195, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 167, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 159, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/router.py", line 187, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/venv/lib/python3.14/site-packages/aiogram/dispatcher/event/handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "/home/farrukh/Frontend/openbudjet-bot/handlers/user.py", line 141, in cmd_balance
+    await message.answer(text, reply_markup=kb.withdraw_inline_keyboard())
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'keyboards' has no attribute 'withdraw_inline_keyboard'. Did you mean: 'initiative_inline_keyboard'?
+2026-07-31 02:18:54,061 [INFO] aiogram.event: Update id=405903132 is handled. Duration 743 ms by bot id=8584314885
+2026-07-31 02:18:55,664 [WARNING] aiogram.dispatcher: Received SIGTERM signal
+2026-07-31 02:18:55,665 [INFO] aiogram.dispatcher: Polling stopped for bot @open_budget_1102_bot id=8584314885 - 'Open Budget bot'
+2026-07-31 02:18:55,665 [INFO] aiogram.dispatcher: Polling stopped
