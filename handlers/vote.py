@@ -207,7 +207,7 @@ async def process_captcha(message: types.Message, state: FSMContext, session: ai
         await state.clear()
         return
 
-    if not check_rate_limit(phone_number, message.from_user.id):
+    if not await check_rate_limit(phone_number, message.from_user.id):
         await status_msg.edit_text("❌ SMS yuborish limiti oshdi. 10 daqiqadan so'ng qayta urining.", reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)))
         await state.clear()
         return

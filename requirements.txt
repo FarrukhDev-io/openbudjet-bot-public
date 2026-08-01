@@ -4,3 +4,4 @@ python-dotenv==1.2.2
 aiosqlite==0.22.1
 asyncpg
 greenlet
+redis

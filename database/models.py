@@ -1,6 +1,12 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+import asyncio
+import random
+import logging
+from asyncpg.exceptions import DeadlockDetectedError, LockNotAvailableError, QueryCanceledError
 from database.connection import get_conn
+
+logger = logging.getLogger(__name__)
 
 # FIX (Roast R2): format_datetime_fields recursive helper was removed from models.py to prevent CPU bottlenecks.
 # Datetime formatting is now delegated to the JSON serializer on the web API layer.
@@ -198,46 +204,62 @@ async def get_user_payment(tg_id: int) -> Optional[Dict[str, Any]]:
 
 async def create_withdrawal_request(tg_id: int, phone: str, full_name: str, card_number: str) -> Optional[int]:
     """
-    FIX (Roast R3): Anti Double-Spending with Pessimistic Locking.
+    FIX (Roast R4): Resilient SELECT FOR UPDATE with statement_timeout, lock_timeout, and Deadlock Retry with Jitter.
     Performs balance check, duplicate check, payment request creation, and balance deduction 
     inside a single atomic PostgreSQL transaction with SELECT FOR UPDATE row-level locking.
     """
-    async with get_conn() as conn:
-        async with conn.transaction():
-            # 1. Lock the user row using SELECT FOR UPDATE to prevent race conditions
-            row = await conn.fetchrow(
-                "SELECT balance FROM users WHERE tg_id = $1 FOR UPDATE",
-                tg_id
-            )
-            if not row:
-                return None
-            
-            balance = row["balance"]
-            if balance <= 0:
-                return None
-            
-            # 2. Check if there is already a pending request to prevent duplicate submissions
-            pending = await conn.fetchval(
-                "SELECT id FROM payment_requests WHERE tg_id = $1 AND status = 'pending' FOR UPDATE",
-                tg_id
-            )
-            if pending:
-                return None
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            async with get_conn() as conn:
+                async with conn.transaction():
+                    # Set local timeouts to prevent blocking connection pool (statement_timeout=3s, lock_timeout=2s)
+                    await conn.execute("SET LOCAL statement_timeout = 3000") # ms
+                    await conn.execute("SET LOCAL lock_timeout = 2000")      # ms
 
-            # 3. Create the payment request
-            request_id = await conn.fetchval(
-                """INSERT INTO payment_requests (tg_id, phone, full_name, card_number, amount)
-                   VALUES ($1, $2, $3, $4, $5) RETURNING id""",
-                tg_id, phone, full_name, card_number, balance
-            )
-            
-            # 4. Deduct the user's balance
-            await conn.execute(
-                "UPDATE users SET balance = balance - $1 WHERE tg_id = $2",
-                balance, tg_id
-            )
-            
-            return request_id
+                    # 1. Lock the user row using SELECT FOR UPDATE to prevent race conditions
+                    row = await conn.fetchrow(
+                        "SELECT balance FROM users WHERE tg_id = $1 FOR UPDATE",
+                        tg_id
+                    )
+                    if not row:
+                        return None
+                    
+                    balance = row["balance"]
+                    if balance <= 0:
+                        return None
+                    
+                    # 2. Check if there is already a pending request to prevent duplicate submissions
+                    pending = await conn.fetchval(
+                        "SELECT id FROM payment_requests WHERE tg_id = $1 AND status = 'pending' FOR UPDATE",
+                        tg_id
+                    )
+                    if pending:
+                        return None
+
+                    # 3. Create the payment request
+                    request_id = await conn.fetchval(
+                        """INSERT INTO payment_requests (tg_id, phone, full_name, card_number, amount)
+                           VALUES ($1, $2, $3, $4, $5) RETURNING id""",
+                        tg_id, phone, full_name, card_number, balance
+                    )
+                    
+                    # 4. Deduct the user's balance
+                    await conn.execute(
+                        "UPDATE users SET balance = balance - $1 WHERE tg_id = $2",
+                        balance, tg_id
+                    )
+                    
+                    return request_id
+        except (DeadlockDetectedError, LockNotAvailableError, QueryCanceledError) as e:
+            if attempt == max_retries:
+                logger.error("Database lock timeout/deadlock retry limit reached: %s", e)
+                raise
+            # Exponential backoff + jitter sleep: e.g. 0.1s to 0.5s backoff
+            sleep_time = (2 ** attempt) * 0.1 + random.uniform(0.05, 0.15)
+            logger.warning("Database lock timeout/deadlock detected. Attempt %d/%d failed, retrying in %.2fs...", attempt, max_retries, sleep_time)
+            await asyncio.sleep(sleep_time)
+    return None
 
 
 # ==============================================================================

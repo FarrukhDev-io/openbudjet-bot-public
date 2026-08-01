@@ -14,7 +14,13 @@ async def init_db_pool() -> None:
     """PostgreSQL ulanishlar pulini ishga tushirish"""
     global db_pool
     if db_pool is None:
-        db_pool = await asyncpg.create_pool(dsn=DATABASE_URL)
+        # FIX (Roast R4): Explicit Connection Pool Limits & Timeouts for PgBouncer compatibility
+        db_pool = await asyncpg.create_pool(
+            dsn=DATABASE_URL,
+            min_size=5,
+            max_size=20,
+            command_timeout=10.0
+        )
 
 
 async def close_db_pool() -> None:

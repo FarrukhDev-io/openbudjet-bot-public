@@ -4,6 +4,7 @@ import hashlib
 import urllib.parse
 import json
 import time
+import asyncio
 import logging
 from datetime import datetime
 from typing import Optional, Any
@@ -76,7 +77,7 @@ def verify_telegram_init_data(init_data: str, bot_token: str) -> Optional[dict]:
     return None
 
 
-def get_authenticated_admin_id(request: web.Request) -> Optional[int]:
+async def get_authenticated_admin_id(request: web.Request) -> Optional[int]:
     """
     Request'dan admin shaxsini autentifikatsiya qiladi va uning Telegram ID-sini qaytaradi.
     Production muhitda strictly Authorization sarlavhasidagi initData verifikatsiya qilinadi.
@@ -85,7 +86,8 @@ def get_authenticated_admin_id(request: web.Request) -> Optional[int]:
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("tma "):
         init_data = auth_header[4:]
-        user_data = verify_telegram_init_data(init_data, config.BOT_TOKEN)
+        # FIX (Roast R4): Event Loop protection by offloading CPU-bound crypt verifications to thread pool
+        user_data = await asyncio.to_thread(verify_telegram_init_data, init_data, config.BOT_TOKEN)
         if user_data:
             admin_id = user_data.get("id")
             if admin_id and is_admin(admin_id):
@@ -94,7 +96,8 @@ def get_authenticated_admin_id(request: web.Request) -> Optional[int]:
     # 2. X-Telegram-Init-Data sarlavhasini tekshirish (muqobil usul)
     init_data_header = request.headers.get("X-Telegram-Init-Data")
     if init_data_header:
-        user_data = verify_telegram_init_data(init_data_header, config.BOT_TOKEN)
+        # FIX (Roast R4): Offload cryptographic verify to thread pool
+        user_data = await asyncio.to_thread(verify_telegram_init_data, init_data_header, config.BOT_TOKEN)
         if user_data:
             admin_id = user_data.get("id")
             if admin_id and is_admin(admin_id):
@@ -115,7 +118,7 @@ def get_authenticated_admin_id(request: web.Request) -> Optional[int]:
 
 async def api_stats(request: web.Request) -> web.Response:
     # Adminni xavfsiz autentifikatsiyadan o'tkazish
-    admin_id = get_authenticated_admin_id(request)
+    admin_id = await get_authenticated_admin_id(request)
     if not admin_id:
         return json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
 
@@ -125,7 +128,7 @@ async def api_stats(request: web.Request) -> web.Response:
 
 async def api_payments(request: web.Request) -> web.Response:
     # Adminni xavfsiz autentifikatsiyadan o'tkazish
-    admin_id = get_authenticated_admin_id(request)
+    admin_id = await get_authenticated_admin_id(request)
     if not admin_id:
         return json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
 
@@ -143,7 +146,7 @@ async def api_payment_action(request: web.Request) -> web.Response:
         })
 
     data = await request.json()
-    admin_id = get_authenticated_admin_id(request)
+    admin_id = await get_authenticated_admin_id(request)
     
     # FIX (Roast R2): Host Spoofing / Bypass prevention. Body param fallback is restricted to development environment only.
     if not admin_id and config.ENVIRONMENT == "development":

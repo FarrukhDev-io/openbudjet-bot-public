@@ -1,14 +1,31 @@
 import time
+import logging
+from rate_limiter import is_rate_limited
 
-# In-memory sliding-window cache for OTP rate limits
+logger = logging.getLogger("utils.limiter")
+
+# Fallback in-memory sliding-window cache for OTP rate limits when Redis is down
 otp_limit_cache = {}
 
 
-def check_rate_limit(phone: str, tg_id: int) -> bool:
+async def check_rate_limit(phone: str, tg_id: int) -> bool:
     """
     Telefon raqami yoki Telegram ID bo'yicha 10 daqiqalik oynada jami 3 ta OTP so'rovga cheklov qo'yadi.
+    Avval Redis orqali tekshiradi, agar ulanib bo'lmasa local in-memory fallback qiladi.
     True qaytarsa - ruxsat berilgan, False - limitdan oshgan.
     """
+    # 1. Try Redis distributed rate limiting (Primary)
+    try:
+        # Check limit for both phone and tg_id separately
+        phone_limited = await is_rate_limited(f"phone:{phone}", max_requests=3, window_seconds=600)
+        tg_limited = await is_rate_limited(f"tg_id:{tg_id}", max_requests=3, window_seconds=600)
+        if phone_limited or tg_limited:
+            return False
+        return True
+    except Exception as e:
+        logger.warning("Redis rate limiter failed, falling back to local memory: %s", e)
+
+    # 2. Local memory fallback (Secondary)
     now = time.time()
     ten_minutes_ago = now - 600
 
