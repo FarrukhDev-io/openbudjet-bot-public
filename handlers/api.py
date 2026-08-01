@@ -1,5 +1,10 @@
 import os
+import hmac
+import hashlib
+import urllib.parse
+import json
 import logging
+from typing import Optional
 from aiohttp import web
 from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -13,17 +18,90 @@ from utils.helpers import is_admin
 logger = logging.getLogger(__name__)
 
 
+def verify_telegram_init_data(init_data: str, bot_token: str) -> Optional[dict]:
+    """
+    Telegram WebApp'dan kelgan initData oqimining haqiqiyligini tekshiradi (Cryptographic hash validation).
+    Muvaffaqiyatli tekshirilsa, foydalanuvchi ma'lumotlarini dict ko'rinishida qaytaradi, aks holda None.
+    """
+    try:
+        # Query string ko'rinishidagi ma'lumotlarni parse qilish
+        parsed_data = urllib.parse.parse_qsl(init_data)
+        data_dict = dict(parsed_data)
+        if "hash" not in data_dict:
+            return None
+        
+        hash_value = data_dict.pop("hash")
+        # Kalitlarni alifbo tartibida saralash
+        sorted_items = sorted(data_dict.items())
+        # Tekshiruv satrini yig'ish (data-check-string)
+        data_check_string = "\n".join(f"{k}={v}" for k, v in sorted_items)
+        
+        # Maxfiy kalitni generatsiya qilish: HMAC-SHA256(WebTelegramData, BOT_TOKEN)
+        secret_key = hmac.new(b"WebTelegramData", bot_token.encode(), hashlib.sha256).digest()
+        # Hash hisoblash: HMAC-SHA256(secret_key, data-check-string)
+        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        
+        if calculated_hash == hash_value:
+            # Hash to'g'ri bo'lsa, 'user' JSON maydonini parse qilish
+            return json.loads(data_dict.get("user", "{}"))
+    except Exception as e:
+        logger.warning("Telegram initData verification failed: %s", e)
+    return None
+
+
+def get_authenticated_admin_id(request: web.Request) -> Optional[int]:
+    """
+    Request'dan admin shaxsini autentifikatsiya qiladi va uning Telegram ID-sini qaytaradi.
+    Production muhitda strictly Authorization sarlavhasidagi initData verifikatsiya qilinadi.
+    Localhost-da esa developerlarga qulaylik uchun 'admin_id' query parametriga fallback qiladi.
+    """
+    # 1. Authorization sarlavhasini tekshirish (TMA WebApp InitData)
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("tma "):
+        init_data = auth_header[4:]
+        user_data = verify_telegram_init_data(init_data, config.BOT_TOKEN)
+        if user_data:
+            admin_id = user_data.get("id")
+            if admin_id and is_admin(admin_id):
+                return admin_id
+
+    # 2. X-Telegram-Init-Data sarlavhasini tekshirish (muqobil usul)
+    init_data_header = request.headers.get("X-Telegram-Init-Data")
+    if init_data_header:
+        user_data = verify_telegram_init_data(init_data_header, config.BOT_TOKEN)
+        if user_data:
+            admin_id = user_data.get("id")
+            if admin_id and is_admin(admin_id):
+                return admin_id
+
+    # 3. Faqat local testing/development uchun fallback (localhost bo'lsa)
+    host = request.host.split(":")[0]
+    if host in ("localhost", "127.0.0.1", "testserver"):
+        admin_id_query = request.query.get("admin_id")
+        if admin_id_query and admin_id_query.isdigit():
+            admin_id = int(admin_id_query)
+            if is_admin(admin_id):
+                return admin_id
+
+    return None
+
 
 async def api_stats(request: web.Request) -> web.Response:
-    if not is_admin(int(request.query.get("admin_id", 0))):
-        return web.json_response({"error": "Unauthorized"}, status=401)
+    # Adminni xavfsiz autentifikatsiyadan o'tkazish
+    admin_id = get_authenticated_admin_id(request)
+    if not admin_id:
+        return web.json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
+
     stats = await db.get_stats()
     return web.json_response(stats, headers={"Access-Control-Allow-Origin": "*"})
 
 
 async def api_payments(request: web.Request) -> web.Response:
-    if not is_admin(int(request.query.get("admin_id", 0))):
-        return web.json_response({"error": "Unauthorized"}, status=401)
+    # Adminni xavfsiz autentifikatsiyadan o'tkazish
+    admin_id = get_authenticated_admin_id(request)
+    if not admin_id:
+        return web.json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
+
     status = request.query.get("status")  # pending, paid, rejected
     payments = await db.get_all_payments(status=status, limit=100)
     return web.json_response(payments, headers={"Access-Control-Allow-Origin": "*"})
@@ -34,12 +112,21 @@ async def api_payment_action(request: web.Request) -> web.Response:
         return web.Response(headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
         })
 
     data = await request.json()
-    admin_id = int(data.get("admin_id", 0))
-    if not is_admin(admin_id):
+    admin_id = get_authenticated_admin_id(request)
+    
+    # Localhost-da ishlayotganda POST body ichidagi admin_id ga fallback qilish
+    if not admin_id:
+        host = request.host.split(":")[0]
+        if host in ("localhost", "127.0.0.1", "testserver"):
+            body_admin_id = data.get("admin_id")
+            if body_admin_id and str(body_admin_id).isdigit() and is_admin(int(body_admin_id)):
+                admin_id = int(body_admin_id)
+
+    if not admin_id:
         return web.json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
 
     req_id = int(data.get("id"))
