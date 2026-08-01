@@ -17,6 +17,9 @@ logger = logging.getLogger("api_server")
 
 
 async def main():
+    # FIX (Roast R4): Centralized Redis/KeyDB Initialization for Distributed Cache & Distributed Locks
+    from redis_client import init_redis, close_redis
+    await init_redis()
     await db.init_db_pool()
     await db.init_db()
 
@@ -48,6 +51,8 @@ async def main():
         await runner.cleanup()
         logger.info("Closing Database connection pool...")
         await db.close_db_pool()
+        logger.info("Closing Redis connection pool...")
+        await close_redis()
         logger.info("Graceful shutdown completed successfully.")
 
 

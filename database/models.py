@@ -3,13 +3,35 @@ from typing import Any, Dict, List, Optional
 import asyncio
 import random
 import logging
-from asyncpg.exceptions import DeadlockDetectedError, LockNotAvailableError, QueryCanceledError
 from database.connection import get_conn
+from asyncpg.exceptions import (
+    DeadlockDetectedError,
+    LockNotAvailableError,
+    QueryCanceledError,
+    InterfaceError,
+)
 
 logger = logging.getLogger(__name__)
 
-# FIX (Roast R2): format_datetime_fields recursive helper was removed from models.py to prevent CPU bottlenecks.
-# Datetime formatting is now delegated to the JSON serializer on the web API layer.
+# FIX (Roast R4): Centralized Anti-Deadlock Retry Logic with Jitter
+def db_retry_on_deadlock(max_retries: int = 3, initial_backoff: float = 0.1):
+    def decorator(func):
+        async def wrapper(*args, **kwargs):
+            for attempt in range(1, max_retries + 1):
+                try:
+                    return await func(*args, **kwargs)
+                except (DeadlockDetectedError, LockNotAvailableError, QueryCanceledError, InterfaceError) as e:
+                    if attempt == max_retries:
+                        logger.error("Database lock timeout/deadlock retry limit reached in %s: %s", func.__name__, e)
+                        raise
+                    sleep_time = initial_backoff * (2 ** attempt) + random.uniform(0.05, 0.15)
+                    logger.warning(
+                        "Database lock/deadlock detected in %s. Attempt %d/%d failed, retrying in %.2fs...",
+                        func.__name__, attempt, max_retries, sleep_time
+                    )
+                    await asyncio.sleep(sleep_time)
+        return wrapper
+    return decorator
 
 
 # ==============================================================================
@@ -23,6 +45,8 @@ async def get_config(key: str, default: Optional[str] = None) -> Optional[str]:
         return val if val is not None else default
 
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def set_config(key: str, value: str) -> None:
     """Konfiguratsiya qiymatini saqlash/yangilash"""
     async with get_conn() as conn:
@@ -37,6 +61,8 @@ async def set_config(key: str, value: str) -> None:
 # USERS
 # ==============================================================================
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def add_user(tg_id: int, username: str, full_name: str, ref_by: Optional[int] = None) -> None:
     """Yangi foydalanuvchi qo'shish"""
     async with get_conn() as conn:
@@ -54,18 +80,24 @@ async def get_user(tg_id: int) -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
 
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def set_user_phone(tg_id: int, phone: str) -> None:
     """Foydalanuvchi telefon raqamini yangilash"""
     async with get_conn() as conn:
         await conn.execute("UPDATE users SET phone = $1 WHERE tg_id = $2", phone, tg_id)
 
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def set_user_voted(tg_id: int) -> None:
     """Foydalanuvchi ovoz berganligini belgilash"""
     async with get_conn() as conn:
         await conn.execute("UPDATE users SET voted = 1 WHERE tg_id = $1", tg_id)
 
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def set_vote_confirmed(tg_id: int) -> None:
     """Ovozni tasdiqlash va referrallarni yangilash"""
     async with get_conn() as conn:
@@ -89,6 +121,8 @@ async def get_balance(tg_id: int) -> int:
         )
         return val or 0
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def add_balance(tg_id: int, amount: int) -> int:
     """Foydalanuvchi balansiga pul qo'shish, yangi balansni qaytaradi"""
     async with get_conn() as conn:
@@ -99,6 +133,8 @@ async def add_balance(tg_id: int, amount: int) -> int:
         """, amount, tg_id)
         return new_balance or 0
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def deduct_balance(tg_id: int, amount: int) -> bool:
     """Balansdan pul ayirish. Yetarli bo'lmasa False qaytaradi"""
     async with get_conn() as conn:
@@ -118,6 +154,8 @@ async def deduct_balance(tg_id: int, amount: int) -> bool:
 # VOTES
 # ==============================================================================
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def add_vote(tg_id: int, phone: str) -> None:
     """Ovoz yozuvini qo'shish"""
     async with get_conn() as conn:
@@ -150,6 +188,8 @@ async def has_voted(tg_id: int) -> bool:
 # PAYMENT REQUESTS
 # ==============================================================================
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def add_payment_request(tg_id: int, phone: str, full_name: str, card_number: str, amount: int = 15000) -> int:
     """To'lov so'rovi qo'shish va yangi row ID sini qaytarish"""
     async with get_conn() as conn:
@@ -179,6 +219,8 @@ async def get_pending_payments() -> List[Dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def update_payment_status(request_id: int, status: str, admin_id: int, note: str = "") -> None:
     """To'lov statusini va admin eslatmasini yangilash"""
     async with get_conn() as conn:
@@ -202,70 +244,62 @@ async def get_user_payment(tg_id: int) -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
 
 
+@db_retry_on_deadlock(max_retries=3)
 async def create_withdrawal_request(tg_id: int, phone: str, full_name: str, card_number: str) -> Optional[int]:
     """
-    FIX (Roast R4): Resilient SELECT FOR UPDATE with statement_timeout, lock_timeout, and Deadlock Retry with Jitter.
+    FIX (Roast R4): Anti-Deadlock Retry Logic with statement_timeout and lock_timeout.
     Performs balance check, duplicate check, payment request creation, and balance deduction 
     inside a single atomic PostgreSQL transaction with SELECT FOR UPDATE row-level locking.
     """
-    max_retries = 3
-    for attempt in range(1, max_retries + 1):
-        try:
-            async with get_conn() as conn:
-                async with conn.transaction():
-                    # Set local timeouts to prevent blocking connection pool (statement_timeout=3s, lock_timeout=2s)
-                    await conn.execute("SET LOCAL statement_timeout = 3000") # ms
-                    await conn.execute("SET LOCAL lock_timeout = 2000")      # ms
+    async with get_conn() as conn:
+        async with conn.transaction():
+            # FIX (Roast R4): Explicit Lock Timeouts to prevent blocking connection pool (statement_timeout='3s', lock_timeout='2s')
+            await conn.execute("SET LOCAL statement_timeout = '3s'")
+            await conn.execute("SET LOCAL lock_timeout = '2s'")
 
-                    # 1. Lock the user row using SELECT FOR UPDATE to prevent race conditions
-                    row = await conn.fetchrow(
-                        "SELECT balance FROM users WHERE tg_id = $1 FOR UPDATE",
-                        tg_id
-                    )
-                    if not row:
-                        return None
-                    
-                    balance = row["balance"]
-                    if balance <= 0:
-                        return None
-                    
-                    # 2. Check if there is already a pending request to prevent duplicate submissions
-                    pending = await conn.fetchval(
-                        "SELECT id FROM payment_requests WHERE tg_id = $1 AND status = 'pending' FOR UPDATE",
-                        tg_id
-                    )
-                    if pending:
-                        return None
+            # 1. Lock the user row using SELECT FOR UPDATE to prevent race conditions
+            row = await conn.fetchrow(
+                "SELECT balance FROM users WHERE tg_id = $1 FOR UPDATE",
+                tg_id
+            )
+            if not row:
+                return None
+            
+            balance = row["balance"]
+            if balance <= 0:
+                return None
+            
+            # 2. Check if there is already a pending request to prevent duplicate submissions
+            pending = await conn.fetchval(
+                "SELECT id FROM payment_requests WHERE tg_id = $1 AND status = 'pending' FOR UPDATE",
+                tg_id
+            )
+            if pending:
+                return None
 
-                    # 3. Create the payment request
-                    request_id = await conn.fetchval(
-                        """INSERT INTO payment_requests (tg_id, phone, full_name, card_number, amount)
-                           VALUES ($1, $2, $3, $4, $5) RETURNING id""",
-                        tg_id, phone, full_name, card_number, balance
-                    )
-                    
-                    # 4. Deduct the user's balance
-                    await conn.execute(
-                        "UPDATE users SET balance = balance - $1 WHERE tg_id = $2",
-                        balance, tg_id
-                    )
-                    
-                    return request_id
-        except (DeadlockDetectedError, LockNotAvailableError, QueryCanceledError) as e:
-            if attempt == max_retries:
-                logger.error("Database lock timeout/deadlock retry limit reached: %s", e)
-                raise
-            # Exponential backoff + jitter sleep: e.g. 0.1s to 0.5s backoff
-            sleep_time = (2 ** attempt) * 0.1 + random.uniform(0.05, 0.15)
-            logger.warning("Database lock timeout/deadlock detected. Attempt %d/%d failed, retrying in %.2fs...", attempt, max_retries, sleep_time)
-            await asyncio.sleep(sleep_time)
-    return None
+            # 3. Create the payment request
+            request_id = await conn.fetchval(
+                """INSERT INTO payment_requests (tg_id, phone, full_name, card_number, amount)
+                   VALUES ($1, $2, $3, $4, $5) RETURNING id""",
+                tg_id, phone, full_name, card_number, balance
+            )
+            
+            # 4. Deduct the user's balance
+            await conn.execute(
+                "UPDATE users SET balance = balance - $1 WHERE tg_id = $2",
+                balance, tg_id
+            )
+            
+            return request_id
+
 
 
 # ==============================================================================
 # REFERRALS
 # ==============================================================================
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def add_referral(inviter_id: int, invited_id: int) -> None:
     """Referral qo'shish"""
     if inviter_id == invited_id:
@@ -401,6 +435,8 @@ async def search_users(query: str) -> List[Dict[str, Any]]:
 # AUDIT LOGS
 # ==============================================================================
 
+# FIX (Roast R4): Anti-Deadlock Retry Logic
+@db_retry_on_deadlock(max_retries=3)
 async def add_audit_log(admin_id: int, action: str, target_id: Optional[int] = None, details: Optional[str] = None) -> None:
     """Audit log yozuvini qo'shish"""
     async with get_conn() as conn:

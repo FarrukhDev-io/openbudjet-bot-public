@@ -149,7 +149,8 @@ async def _process_phone_number(message: types.Message, state: FSMContext, phone
             return
 
         await state.update_data(captcha_key=captcha_key)
-        image_bytes = utils.base64_to_bytes(captcha_image)
+        # FIX (Roast R4): Offloading CPU-bound base64 decoding to a worker thread to protect async event loop
+        image_bytes = await asyncio.to_thread(utils.base64_to_bytes, captcha_image)
         photo = types.BufferedInputFile(image_bytes, filename="captcha.jpg")
 
         await status_msg.delete()

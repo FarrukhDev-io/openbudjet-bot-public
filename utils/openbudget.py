@@ -16,8 +16,10 @@ TIMEOUT = aiohttp.ClientTimeout(total=10)
 async def fetch_captcha(session: aiohttp.ClientSession) -> Dict[str, Any]:
     """OpenBudget API'dan captcha yuklash (Exponential backoff retry va timeout bilan)"""
     for attempt in range(1, 4):
+        # FIX (Roast R4): Offloading CPU-bound header generation to a thread to prevent event loop lag
+        captcha_header = await asyncio.to_thread(generate_captcha_header)
         headers = {
-            "Access-Captcha": generate_captcha_header(),
+            "Access-Captcha": captcha_header,
             "Accept": "application/json",
             "Origin": "https://openbudget.uz",
             "Referer": "https://openbudget.uz/",
