@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 SUPER_ADMIN_ID = int(os.getenv("SUPER_ADMIN_ID", "0"))
 ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "0").split(",")))
 

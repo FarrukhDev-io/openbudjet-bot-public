@@ -3,8 +3,10 @@ import hmac
 import hashlib
 import urllib.parse
 import json
+import time
 import logging
-from typing import Optional
+from datetime import datetime
+from typing import Optional, Any
 from aiohttp import web
 from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -16,6 +18,24 @@ from utils.helpers import is_admin
 
 
 logger = logging.getLogger(__name__)
+
+
+# FIX (Roast R2): Custom JSON encoder to serialize datetime fields natively at web layer, avoiding CPU bottlenecks in models.py
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.strftime("%Y-%m-%d %H:%M:%S")
+        return super().default(obj)
+
+
+def json_response(data: Any, status: int = 200, headers: Optional[dict] = None) -> web.Response:
+    """Overwritten JSON response helper using native DateTimeEncoder wrapper for speed"""
+    return web.json_response(
+        data,
+        status=status,
+        headers=headers,
+        dumps=lambda x: json.dumps(x, cls=DateTimeEncoder)
+    )
 
 
 def verify_telegram_init_data(init_data: str, bot_token: str) -> Optional[dict]:
@@ -31,6 +51,13 @@ def verify_telegram_init_data(init_data: str, bot_token: str) -> Optional[dict]:
             return None
         
         hash_value = data_dict.pop("hash")
+        
+        # FIX (Roast R2): Replay attack window check (Reject data older than 24 hours / 86400 seconds)
+        auth_date_str = data_dict.get("auth_date")
+        if not auth_date_str or not auth_date_str.isdigit() or time.time() - int(auth_date_str) > 86400:
+            logger.warning("Telegram initData verification failed: auth_date expired or missing")
+            return None
+
         # Kalitlarni alifbo tartibida saralash
         sorted_items = sorted(data_dict.items())
         # Tekshiruv satrini yig'ish (data-check-string)
@@ -45,7 +72,7 @@ def verify_telegram_init_data(init_data: str, bot_token: str) -> Optional[dict]:
             # Hash to'g'ri bo'lsa, 'user' JSON maydonini parse qilish
             return json.loads(data_dict.get("user", "{}"))
     except Exception as e:
-        logger.warning("Telegram initData verification failed: %s", e)
+        logger.exception("Telegram initData verification raised exception: %s", e)
     return None
 
 
@@ -53,7 +80,6 @@ def get_authenticated_admin_id(request: web.Request) -> Optional[int]:
     """
     Request'dan admin shaxsini autentifikatsiya qiladi va uning Telegram ID-sini qaytaradi.
     Production muhitda strictly Authorization sarlavhasidagi initData verifikatsiya qilinadi.
-    Localhost-da esa developerlarga qulaylik uchun 'admin_id' query parametriga fallback qiladi.
     """
     # 1. Authorization sarlavhasini tekshirish (TMA WebApp InitData)
     auth_header = request.headers.get("Authorization")
@@ -74,14 +100,15 @@ def get_authenticated_admin_id(request: web.Request) -> Optional[int]:
             if admin_id and is_admin(admin_id):
                 return admin_id
 
-    # 3. Faqat local testing/development uchun fallback (localhost bo'lsa)
-    host = request.host.split(":")[0]
-    if host in ("localhost", "127.0.0.1", "testserver"):
-        admin_id_query = request.query.get("admin_id")
-        if admin_id_query and admin_id_query.isdigit():
-            admin_id = int(admin_id_query)
-            if is_admin(admin_id):
-                return admin_id
+    # FIX (Roast R2): Host Spoofing / Bypass prevention. Query params are only accepted if explicitly ENVIRONMENT=development and local host.
+    if config.ENVIRONMENT == "development":
+        host = request.host.split(":")[0]
+        if host in ("localhost", "127.0.0.1", "testserver"):
+            admin_id_query = request.query.get("admin_id")
+            if admin_id_query and admin_id_query.isdigit():
+                admin_id = int(admin_id_query)
+                if is_admin(admin_id):
+                    return admin_id
 
     return None
 
@@ -90,21 +117,21 @@ async def api_stats(request: web.Request) -> web.Response:
     # Adminni xavfsiz autentifikatsiyadan o'tkazish
     admin_id = get_authenticated_admin_id(request)
     if not admin_id:
-        return web.json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
+        return json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
 
     stats = await db.get_stats()
-    return web.json_response(stats, headers={"Access-Control-Allow-Origin": "*"})
+    return json_response(stats, headers={"Access-Control-Allow-Origin": "*"})
 
 
 async def api_payments(request: web.Request) -> web.Response:
     # Adminni xavfsiz autentifikatsiyadan o'tkazish
     admin_id = get_authenticated_admin_id(request)
     if not admin_id:
-        return web.json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
+        return json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
 
     status = request.query.get("status")  # pending, paid, rejected
     payments = await db.get_all_payments(status=status, limit=100)
-    return web.json_response(payments, headers={"Access-Control-Allow-Origin": "*"})
+    return json_response(payments, headers={"Access-Control-Allow-Origin": "*"})
 
 
 async def api_payment_action(request: web.Request) -> web.Response:
@@ -118,8 +145,8 @@ async def api_payment_action(request: web.Request) -> web.Response:
     data = await request.json()
     admin_id = get_authenticated_admin_id(request)
     
-    # Localhost-da ishlayotganda POST body ichidagi admin_id ga fallback qilish
-    if not admin_id:
+    # FIX (Roast R2): Host Spoofing / Bypass prevention. Body param fallback is restricted to development environment only.
+    if not admin_id and config.ENVIRONMENT == "development":
         host = request.host.split(":")[0]
         if host in ("localhost", "127.0.0.1", "testserver"):
             body_admin_id = data.get("admin_id")
@@ -127,7 +154,7 @@ async def api_payment_action(request: web.Request) -> web.Response:
                 admin_id = int(body_admin_id)
 
     if not admin_id:
-        return web.json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
+        return json_response({"error": "Unauthorized"}, status=401, headers={"Access-Control-Allow-Origin": "*"})
 
     req_id = int(data.get("id"))
     action = data.get("action")  # paid or rejected
@@ -135,7 +162,7 @@ async def api_payment_action(request: web.Request) -> web.Response:
 
     payment = await db.get_payment_request(req_id)
     if not payment:
-        return web.json_response({"error": "Payment request not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+        return json_response({"error": "Payment request not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
 
     await db.update_payment_status(req_id, action, admin_id, note)
 
@@ -165,9 +192,9 @@ async def api_payment_action(request: web.Request) -> web.Response:
                 f"💰 <b>{payment['amount']:,} so'm</b> balansingizga qaytarildi!",
             )
     except Exception as e:
-        logger.warning("Foydalanuvchiga API orqali xabar ketmadi: %s", e)
+        logger.exception("Foydalanuvchiga API orqali xabar yuborishda xatolik yuz berdi: %s", e)
 
-    return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+    return json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
 
 async def handle_options(request):

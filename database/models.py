@@ -2,19 +2,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from database.connection import get_conn
 
-def format_datetime_fields(obj: Any) -> Any:
-    """Datetimes are converted to standard string formats to avoid JSON serialization errors."""
-    if isinstance(obj, list):
-        return [format_datetime_fields(item) for item in obj]
-    elif isinstance(obj, dict):
-        new_dict = {}
-        for k, v in obj.items():
-            if isinstance(v, datetime):
-                new_dict[k] = v.strftime("%Y-%m-%d %H:%M:%S")
-            else:
-                new_dict[k] = format_datetime_fields(v)
-        return new_dict
-    return obj
+# FIX (Roast R2): format_datetime_fields recursive helper was removed from models.py to prevent CPU bottlenecks.
+# Datetime formatting is now delegated to the JSON serializer on the web API layer.
 
 
 # ==============================================================================
@@ -56,7 +45,7 @@ async def get_user(tg_id: int) -> Optional[Dict[str, Any]]:
     """Foydalanuvchini ID bo'yicha olish"""
     async with get_conn() as conn:
         row = await conn.fetchrow("SELECT * FROM users WHERE tg_id = $1", tg_id)
-        return format_datetime_fields(dict(row)) if row else None
+        return dict(row) if row else None
 
 
 async def set_user_phone(tg_id: int, phone: str) -> None:
@@ -142,7 +131,7 @@ async def get_vote(tg_id: int) -> Optional[Dict[str, Any]]:
         row = await conn.fetchrow(
             "SELECT * FROM votes WHERE tg_id = $1 ORDER BY id DESC LIMIT 1", tg_id
         )
-        return format_datetime_fields(dict(row)) if row else None
+        return dict(row) if row else None
 
 
 async def has_voted(tg_id: int) -> bool:
@@ -172,7 +161,7 @@ async def get_payment_request(request_id: int) -> Optional[Dict[str, Any]]:
         row = await conn.fetchrow(
             "SELECT * FROM payment_requests WHERE id = $1", request_id
         )
-        return format_datetime_fields(dict(row)) if row else None
+        return dict(row) if row else None
 
 
 async def get_pending_payments() -> List[Dict[str, Any]]:
@@ -181,7 +170,7 @@ async def get_pending_payments() -> List[Dict[str, Any]]:
         rows = await conn.fetch(
             "SELECT * FROM payment_requests WHERE status = 'pending' ORDER BY id DESC"
         )
-        return format_datetime_fields([dict(r) for r in rows])
+        return [dict(r) for r in rows]
 
 
 async def update_payment_status(request_id: int, status: str, admin_id: int, note: str = "") -> None:
@@ -204,7 +193,7 @@ async def get_user_payment(tg_id: int) -> Optional[Dict[str, Any]]:
             "SELECT * FROM payment_requests WHERE tg_id = $1 ORDER BY id DESC LIMIT 1",
             tg_id
         )
-        return format_datetime_fields(dict(row)) if row else None
+        return dict(row) if row else None
 
 
 # ==============================================================================
@@ -286,7 +275,7 @@ async def get_votes_list(limit: int = 20, offset: int = 0) -> List[Dict[str, Any
             ORDER BY v.id DESC
             LIMIT $1 OFFSET $2
         """, limit, offset)
-        return format_datetime_fields([dict(r) for r in rows])
+        return [dict(r) for r in rows]
 
 
 async def get_top_referrers(limit: int = 10) -> List[Dict[str, Any]]:
@@ -323,7 +312,7 @@ async def get_all_payments(status: Optional[str] = None, limit: int = 20, offset
                 LEFT JOIN users u ON p.tg_id = u.tg_id
                 ORDER BY p.id DESC LIMIT $1 OFFSET $2
             """, limit, offset)
-        return format_datetime_fields([dict(r) for r in rows])
+        return [dict(r) for r in rows]
 
 
 async def search_users(query: str) -> List[Dict[str, Any]]:
@@ -339,7 +328,7 @@ async def search_users(query: str) -> List[Dict[str, Any]]:
                 SELECT * FROM users 
                 WHERE username LIKE $1 OR full_name LIKE $2
             """, f"%{query}%", f"%{query}%")
-        return format_datetime_fields([dict(r) for r in rows])
+        return [dict(r) for r in rows]
 
 
 # ==============================================================================

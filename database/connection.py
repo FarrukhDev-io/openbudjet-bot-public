@@ -137,46 +137,7 @@ async def init_db() -> None:
             )
         """)
 
-        # ==============================================================================
-        # MIGRATION: VARCHAR sanalarni native TIMESTAMP turiga o'tkazish (Ma'lumotlarni saqlagan holda)
-        # ==============================================================================
-        # Users migratsiyasi
-        try:
-            await conn.execute("ALTER TABLE users ALTER COLUMN joined_at TYPE TIMESTAMP USING joined_at::timestamp")
-            await conn.execute("ALTER TABLE users ALTER COLUMN joined_at SET DEFAULT CURRENT_TIMESTAMP")
-        except Exception:
-            pass
-
-        # Votes migratsiyasi
-        try:
-            await conn.execute("ALTER TABLE votes ALTER COLUMN voted_at TYPE TIMESTAMP USING voted_at::timestamp")
-            await conn.execute("ALTER TABLE votes ALTER COLUMN voted_at SET DEFAULT CURRENT_TIMESTAMP")
-            await conn.execute("ALTER TABLE votes ALTER COLUMN confirmed_at TYPE TIMESTAMP USING confirmed_at::timestamp")
-        except Exception:
-            pass
-
-        # Referrals migratsiyasi
-        try:
-            await conn.execute("ALTER TABLE referrals ALTER COLUMN joined_at TYPE TIMESTAMP USING joined_at::timestamp")
-            await conn.execute("ALTER TABLE referrals ALTER COLUMN joined_at SET DEFAULT CURRENT_TIMESTAMP")
-        except Exception:
-            pass
-
-        # Payment Requests migratsiyasi
-        try:
-            await conn.execute("ALTER TABLE payment_requests ALTER COLUMN requested_at TYPE TIMESTAMP USING requested_at::timestamp")
-            await conn.execute("ALTER TABLE payment_requests ALTER COLUMN requested_at SET DEFAULT CURRENT_TIMESTAMP")
-            await conn.execute("ALTER TABLE payment_requests ALTER COLUMN processed_at TYPE TIMESTAMP USING processed_at::timestamp")
-        except Exception:
-            pass
-
-        # Audit Logs migratsiyasi
-        try:
-            await conn.execute("ALTER TABLE audit_logs ALTER COLUMN timestamp TYPE TIMESTAMP USING timestamp::timestamp")
-            await conn.execute("ALTER TABLE audit_logs ALTER COLUMN timestamp SET DEFAULT CURRENT_TIMESTAMP")
-        except Exception:
-            pass
-
+        # FIX (Roast R2): DB migrations are moved to database/migrate.py to prevent table-level exclusive locks during startup.
         # ==============================================================================
         # INDEKSLAR: Qidiruv va saralashni optimallashtirish (Full-Table scan dan himoya)
         # ==============================================================================
