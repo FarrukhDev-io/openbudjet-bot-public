@@ -3,8 +3,11 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     KeyboardButton,
     ReplyKeyboardMarkup,
+    WebAppInfo,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
+
+import config
 
 
 def admin_main_keyboard() -> ReplyKeyboardMarkup:
@@ -20,6 +23,12 @@ def admin_main_keyboard() -> ReplyKeyboardMarkup:
     builder.row(
         KeyboardButton(text="👥 Top referrallar"),
         KeyboardButton(text="🔍 Foydalanuvchi qidirish"),
+    )
+    builder.row(
+        KeyboardButton(
+            text="🖥 Admin Panel (Web App)",
+            web_app=WebAppInfo(url=config.WEBAPP_URL)
+        )
     )
     builder.row(KeyboardButton(text="🏠 Bosh sahifa"))
     return builder.as_markup(resize_keyboard=True)

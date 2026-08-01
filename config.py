@@ -16,6 +16,7 @@ ADMIN_PHONE = os.getenv("ADMIN_PHONE", "+998943238586")
 ADMIN_TELEGRAM = os.getenv("ADMIN_TELEGRAM", "@joshqinjumayev")
 DEVELOPER_TELEGRAM = os.getenv("DEVELOPER_TELEGRAM", "@sadullaef_06")
 PORT = int(os.getenv("PORT", "8000"))
+WEBAPP_URL = os.getenv("WEBAPP_URL", f"http://localhost:{int(os.getenv('PORT', '8000'))}")
 
 API_BASE = "https://openbudget.uz/api"
 CAPTCHA_URL = f"{API_BASE}/v2/vote/captcha-2"
