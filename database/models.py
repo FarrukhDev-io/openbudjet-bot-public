@@ -196,6 +196,50 @@ async def get_user_payment(tg_id: int) -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
 
 
+async def create_withdrawal_request(tg_id: int, phone: str, full_name: str, card_number: str) -> Optional[int]:
+    """
+    FIX (Roast R3): Anti Double-Spending with Pessimistic Locking.
+    Performs balance check, duplicate check, payment request creation, and balance deduction 
+    inside a single atomic PostgreSQL transaction with SELECT FOR UPDATE row-level locking.
+    """
+    async with get_conn() as conn:
+        async with conn.transaction():
+            # 1. Lock the user row using SELECT FOR UPDATE to prevent race conditions
+            row = await conn.fetchrow(
+                "SELECT balance FROM users WHERE tg_id = $1 FOR UPDATE",
+                tg_id
+            )
+            if not row:
+                return None
+            
+            balance = row["balance"]
+            if balance <= 0:
+                return None
+            
+            # 2. Check if there is already a pending request to prevent duplicate submissions
+            pending = await conn.fetchval(
+                "SELECT id FROM payment_requests WHERE tg_id = $1 AND status = 'pending' FOR UPDATE",
+                tg_id
+            )
+            if pending:
+                return None
+
+            # 3. Create the payment request
+            request_id = await conn.fetchval(
+                """INSERT INTO payment_requests (tg_id, phone, full_name, card_number, amount)
+                   VALUES ($1, $2, $3, $4, $5) RETURNING id""",
+                tg_id, phone, full_name, card_number, balance
+            )
+            
+            # 4. Deduct the user's balance
+            await conn.execute(
+                "UPDATE users SET balance = balance - $1 WHERE tg_id = $2",
+                balance, tg_id
+            )
+            
+            return request_id
+
+
 # ==============================================================================
 # REFERRALS
 # ==============================================================================

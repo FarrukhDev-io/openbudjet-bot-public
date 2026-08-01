@@ -340,27 +340,22 @@ async def process_card(message: types.Message, state: FSMContext) -> None:
     db_user = await db.get_user(user.id)
     phone = db_user.get("phone", "") if db_user else ""
     full_name = user.full_name or ""
-    balance = await db.get_balance(user.id)
 
-    if balance <= 0:
-        await state.clear()
-        await message.answer(
-            "❌ Balansingizda pul qolmagan yoki allaqachon to'lov so'rovi yuborilgan.",
-            reply_markup=kb.main_keyboard(is_user_admin=is_admin(user.id))
-        )
-        return
-
-    # Add payment request with the user's full balance
-    request_id = await db.add_payment_request(
+    # FIX (Roast R3): Anti Double-Spending with SELECT FOR UPDATE atomic transaction
+    request_id = await db.create_withdrawal_request(
         tg_id=user.id,
         phone=phone,
         full_name=full_name,
-        card_number=card,
-        amount=balance
+        card_number=card
     )
 
-    # Deduct balance immediately to prevent double spending
-    await db.deduct_balance(user.id, balance)
+    if not request_id:
+        await state.clear()
+        await message.answer(
+            "❌ Balansingizda pul qolmagan yoki allaqachon kutilayotgan to'lov so'rovingiz bor.",
+            reply_markup=kb.main_keyboard(is_user_admin=is_admin(user.id))
+        )
+        return
 
     await state.clear()
 

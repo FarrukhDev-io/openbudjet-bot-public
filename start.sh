@@ -179,44 +179,64 @@ else
 fi
 
 # =============================================================================
-# QADAM 5: Eski bot jarayonlarini to'xtatish
+# QADAM 5: Eski bot va API jarayonlarini to'xtatish
 # =============================================================================
-step "5/6 · Eski bot jarayonlarini to'xtatish"
+step "5/6 · Eski jarayonlarni to'xtatish"
 
 BOT_PIDS=$(pgrep -f "python.*bot.py" 2>/dev/null || true)
-if [ -n "$BOT_PIDS" ]; then
-    warn "Eski bot jarayonlari topildi: $BOT_PIDS"
-    echo "$BOT_PIDS" | xargs kill -TERM 2>/dev/null || true
+API_PIDS=$(pgrep -f "python.*api_server.py" 2>/dev/null || true)
+
+if [ -n "$BOT_PIDS" ] || [ -n "$API_PIDS" ]; then
+    warn "Eski jarayonlar aniqlandi. To'xtatilmoqda..."
+    [ -n "$BOT_PIDS" ] && echo "$BOT_PIDS" | xargs kill -TERM 2>/dev/null || true
+    [ -n "$API_PIDS" ] && echo "$API_PIDS" | xargs kill -TERM 2>/dev/null || true
     sleep 2
-    # Majburiy o'chirish (agar hali ishlayotgan bo'lsa)
-    REMAINING=$(pgrep -f "python.*bot.py" 2>/dev/null || true)
-    if [ -n "$REMAINING" ]; then
-        echo "$REMAINING" | xargs kill -KILL 2>/dev/null || true
-    fi
+    # Majburiy o'chirish (agar SIGTERM orqali o'chmagan bo'lsa)
+    REMAINING_BOT=$(pgrep -f "python.*bot.py" 2>/dev/null || true)
+    REMAINING_API=$(pgrep -f "python.*api_server.py" 2>/dev/null || true)
+    [ -n "$REMAINING_BOT" ] && echo "$REMAINING_BOT" | xargs kill -KILL 2>/dev/null || true
+    [ -n "$REMAINING_API" ] && echo "$REMAINING_API" | xargs kill -KILL 2>/dev/null || true
     success "Eski jarayonlar to'xtatildi"
 else
-    info "Eski bot jarayonlari yo'q"
+    info "Eski jarayonlar yo'q"
 fi
 
 # =============================================================================
-# QADAM 6: Botni ishga tushirish
+# QADAM 6: Jarayonlarni ajratilgan holda ishga tushirish (SPOF oldini olish)
 # =============================================================================
-step "6/6 · Bot ishga tushirilmoqda"
+step "6/6 · Bot va API Serverlarni ishga tushirish"
 
-# Log fayli
+# Log fayllari
 LOG_DIR="logs"
 mkdir -p "$LOG_DIR"
-LOG_FILE="$LOG_DIR/bot_$(date +%Y%m%d_%H%M%S).log"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BOT_LOG_FILE="$LOG_DIR/bot_${TIMESTAMP}.log"
+API_LOG_FILE="$LOG_DIR/api_${TIMESTAMP}.log"
 
-info "Log fayli: $LOG_FILE"
-info "Bot PORT: $(grep -E '^PORT=' .env | cut -d'=' -f2 | tr -d '"' || echo '8000')"
+info "Bot Log: $BOT_LOG_FILE"
+info "API Log: $API_LOG_FILE"
+info "API PORT: $(grep -E '^PORT=' .env | cut -d'=' -f2 | tr -d '"' || echo '8000')"
 
 echo ""
 echo -e "${BOLD}${GREEN}╔══════════════════════════════════════╗${NC}"
-echo -e "${BOLD}${GREEN}║   OpenBudjet Bot Ishga Tushdi! 🚀    ║${NC}"
+echo -e "${BOLD}${GREEN}║   OpenBudjet Tizimi Ishga Tushdi! 🚀 ║${NC}"
+echo -e "${BOLD}${GREEN}║   (Bot va Web API alohida workerlar) ║${NC}"
 echo -e "${BOLD}${GREEN}║   To'xtatish uchun: Ctrl+C           ║${NC}"
 echo -e "${BOLD}${GREEN}╚══════════════════════════════════════╝${NC}"
 echo ""
 
-# Botni ishga tushirish (log yozib, terminaldayam ko'rsatib)
-exec $PYTHON_CMD bot.py 2>&1 | tee "$LOG_FILE"
+# 1. Bot Polling jarayonini backgroundda ishga tushirish
+$PYTHON_CMD bot.py > "$BOT_LOG_FILE" 2>&1 &
+BOT_PID=$!
+success "Bot Polling jarayoni boshlandi (PID: $BOT_PID)"
+
+# 2. Web API Server jarayonini backgroundda ishga tushirish
+$PYTHON_CMD api_server.py > "$API_LOG_FILE" 2>&1 &
+API_PID=$!
+success "Web API Server jarayoni boshlandi (PID: $API_PID)"
+
+# Exit bo'lganda child processlarni ham o'chirish (Graceful Shutdown)
+trap 'echo -e "\n${YELLOW}[!] Jarayonlar to\x27xtatilmoqda...${NC}"; kill $BOT_PID $API_PID 2>/dev/null || true; exit 0' SIGINT SIGTERM
+
+# Loglarni bir vaqtda ekranga ko'rsatib turish
+tail -f "$BOT_LOG_FILE" "$API_LOG_FILE"

@@ -1,0 +1,49 @@
+name: OpenBudjet Bot CI
+
+on:
+  push:
+    branches: [ main, farrukh ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Verify Python Syntax
+      run: |
+        python -m py_compile $(find . -name "*.py" -not -path "./venv/*")
+
+  frontend-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: adminpanel-vite/package-lock.json
+
+    - name: Install Frontend Dependencies
+      run: |
+        cd adminpanel-vite
+        npm ci
+
+    - name: Build React App (Vite Compile Check)
+      run: |
+        cd adminpanel-vite
+        npm run build
