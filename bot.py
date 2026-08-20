@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import aiohttp
+from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -20,16 +21,16 @@ http_session: aiohttp.ClientSession | None = None
 
 
 async def health_check(request):
-    return aiohttp.web.Response(text="Bot is running!")
+    return web.Response(text="Bot is running!")
 
 
 async def start_web_server():
-    app = aiohttp.web.Application()
+    app = web.Application()
     app.router.add_get("/", health_check)
-    runner = aiohttp.web.AppRunner(app)
+    runner = web.AppRunner(app)
     await runner.setup()
     port = int(config.os.getenv("PORT", "10000"))
-    site = aiohttp.web.TCPSite(runner, "0.0.0.0", port)
+    site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
     logger.info("Web server started on port %d", port)
 
