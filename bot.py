@@ -35,6 +35,23 @@ async def start_web_server():
     logger.info("Web server started on port %d", port)
 
 
+async def keep_alive():
+    await asyncio.sleep(30)  # Wait for startup
+    ping_urls = [
+        "https://openbudjet-bot-h1nb.onrender.com",
+        "https://openbudjet-tagoribot.onrender.com"
+    ]
+    async with aiohttp.ClientSession() as session:
+        while True:
+            for url in ping_urls:
+                try:
+                    async with session.get(url, timeout=10) as resp:
+                        logger.info("Keep-alive pinged %s | Status: %s", url, resp.status)
+                except Exception as e:
+                    logger.warning("Failed to ping %s: %s", url, e)
+            await asyncio.sleep(600)  # Ping every 10 minutes
+
+
 async def main():
     global http_session
     # FIX (Roast R3): Resilient ClientSession with connection limits to avoid FD exhaustion
@@ -59,6 +76,9 @@ async def main():
 
     # Start web server for Render health check
     await start_web_server()
+
+    # Start keep-alive ping loop in the background
+    asyncio.create_task(keep_alive())
 
     logger.info("Bot Polling process started | Admin IDs: %s", config.ADMIN_IDS)
     try:
