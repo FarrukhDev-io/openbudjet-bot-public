@@ -19,6 +19,21 @@ logger = logging.getLogger("bot")
 http_session: aiohttp.ClientSession | None = None
 
 
+async def health_check(request):
+    return aiohttp.web.Response(text="Bot is running!")
+
+
+async def start_web_server():
+    app = aiohttp.web.Application()
+    app.router.add_get("/", health_check)
+    runner = aiohttp.web.AppRunner(app)
+    await runner.setup()
+    port = int(config.os.getenv("PORT", "10000"))
+    site = aiohttp.web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logger.info("Web server started on port %d", port)
+
+
 async def main():
     global http_session
     # FIX (Roast R3): Resilient ClientSession with connection limits to avoid FD exhaustion
@@ -41,6 +56,9 @@ async def main():
         vote.router
     )
 
+    # Start web server for Render health check
+    await start_web_server()
+
     logger.info("Bot Polling process started | Admin IDs: %s", config.ADMIN_IDS)
     try:
         await dp.start_polling(bot)
@@ -55,4 +73,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(main_loop)
+    main_loop.run_until_complete(main())

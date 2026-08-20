@@ -54,16 +54,29 @@ async def admin_stats(message: types.Message) -> None:
     if not is_admin(message.from_user.id):
         return
     stats = await db.get_stats()
+    
+    total_votes = stats['total_votes']
+    confirmed = stats['confirmed']
+    success_rate = (confirmed / total_votes * 100) if total_votes > 0 else 0.0
+
     await message.answer(
-        "📊 <b>Umumiy statistika</b>\n\n"
-        f"👥 Foydalanuvchilar: <b>{stats['total_users']}</b>\n"
-        f"🗳 Jami ovozlar: <b>{stats['total_votes']}</b>\n"
-        f"✅ Tasdiqlangan: <b>{stats['confirmed']}</b>\n"
-        f"📅 Bugungi ovozlar: <b>{stats['today_votes']}</b>\n"
-        f"👤 Referrallar: <b>{stats['total_refs']}</b>\n\n"
-        f"💳 Kutayotgan to'lovlar: <b>{stats['pending_pays']}</b>\n"
-        f"✅ To'langan: <b>{stats['paid_count']}</b>\n"
-        f"💰 Jami to'langan: <b>{stats['total_paid_sum']:,} so'm</b>",
+        "📊 <b>To'liq Bot Statistikasi</b>\n\n"
+        "👥 <b>Foydalanuvchilar va Ovozlar:</b>\n"
+        f"├ Foydalanuvchilar: <b>{stats['total_users']} ta</b>\n"
+        f"├ Jami urinishlar: <b>{total_votes} ta</b>\n"
+        f"├ Tasdiqlangan ovozlar: <b>{confirmed} ta</b> ({success_rate:.1f}%)\n"
+        f"└ Bugungi ovozlar: <b>{stats['today_votes']} ta</b>\n\n"
+        
+        "👥 <b>Takliflar (Referral):</b>\n"
+        f"├ Jami takliflar: <b>{stats['total_refs']} ta</b>\n"
+        f"└ Faol taklif qilganlar: <b>{stats['active_referrers_count']} ta</b>\n\n"
+        
+        "💳 <b>To'lovlar:</b>\n"
+        f"├ Kutayotgan so'rovlar: <b>{stats['pending_pays']} ta</b>\n"
+        f"├ To'langan so'rovlar: <b>{stats['paid_count']} ta</b> (💰 <b>{stats['total_paid_sum']:,} so'm</b>)\n"
+        f"├ Rad etilgan so'rovlar: <b>{stats['rejected_count']} ta</b> (💰 <b>{stats['total_rejected_sum']:,} so'm</b>)\n"
+        f"├ Bugun to'langan summa: <b>{stats['today_paid_sum']:,} so'm</b>\n"
+        f"└ Foydalanuvchilar joriy balansi: <b>{stats['total_user_balances']:,} so'm</b>",
         reply_markup=kb.admin_main_keyboard(),
     )
 

@@ -239,10 +239,11 @@ async def init_web_app(bot: Bot) -> web.Application:
     return app
 
 
-async def start_web_server(bot: Bot):
+async def start_web_server(bot: Bot) -> web.AppRunner:
     app = await init_web_app(bot)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', config.PORT)
     await site.start()
     logger.info("Web API Server %d portda ishga tushdi.", config.PORT)
+    return runner
