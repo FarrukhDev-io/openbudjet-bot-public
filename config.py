@@ -7,6 +7,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 SUPER_ADMIN_ID = int(os.getenv("SUPER_ADMIN_ID", "0"))
 ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "0").split(",")))
+GROUP_ID = os.getenv("GROUP_ID", "@attaronmahalla")
 
 INITIATIVE_UUID = os.getenv("INITIATIVE_UUID", "49912c4c-d184-4112-81b4-9a809d841845")
 INITIATIVE_PUB_ID = os.getenv("INITIATIVE_PUB_ID", "055521975013")

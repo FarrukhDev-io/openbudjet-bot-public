@@ -48,7 +48,6 @@ check_env() {
 }
 
 BOT_TOKEN=$(check_env "BOT_TOKEN")
-DATABASE_URL=$(check_env "DATABASE_URL")
 check_env "SUPER_ADMIN_ID" > /dev/null
 check_env "ADMIN_IDS" > /dev/null
 
@@ -105,78 +104,16 @@ $PYTHON_CMD -m py_compile database/connection.py database/models.py 2>/dev/null 
 success "Python sintaksisi to'g'ri"
 
 # =============================================================================
-# QADAM 3: PostgreSQL ulanishini tekshirish
+# QADAM 3: PostgreSQL ulanishini tekshirish (O'tkazib yuborildi - Bazasiz rejim)
 # =============================================================================
-step "3/6 · PostgreSQL ulanish tekshirish"
-
-DB_CHECK=$($PYTHON_CMD -c "
-import asyncio, asyncpg, os
-from dotenv import load_dotenv
-load_dotenv()
-async def check():
-    try:
-        conn = await asyncpg.connect(os.getenv('DATABASE_URL'))
-        ver = await conn.fetchval('SELECT version()')
-        await conn.close()
-        print('OK:' + ver[:40])
-    except Exception as e:
-        print('ERR:' + str(e))
-asyncio.run(check())
-" 2>&1)
-
-if echo "$DB_CHECK" | grep -q "^OK:"; then
-    success "PostgreSQL ulandi: $(echo $DB_CHECK | sed 's/OK://')"
-elif echo "$DB_CHECK" | grep -q "^ERR:"; then
-    error "PostgreSQL ulanmadi: $(echo $DB_CHECK | sed 's/ERR://')"
-else
-    warn "PostgreSQL tekshirishda noaniqlik: $DB_CHECK"
-fi
+step "3/6 · PostgreSQL ulanish tekshirish (Bazasiz rejim)"
+info "Bot ma'lumotlar bazasisiz ishlaydi. Ushbu qadam o'tkazib yuborildi."
 
 # =============================================================================
-# QADAM 4: React Mini App qurish
+# QADAM 4: React Mini App (O'tkazib yuborildi - O'chirilgan)
 # =============================================================================
-step "4/6 · React Mini App (adminpanel-vite)"
-
-if [ ! -d "adminpanel-vite" ]; then
-    warn "adminpanel-vite papkasi topilmadi, o'tkazib yuborildi"
-else
-    cd adminpanel-vite
-
-    # Node.js tekshirish
-    if ! command -v node &>/dev/null; then
-        warn "Node.js topilmadi — frontend build o'tkazib yuborildi"
-    else
-        NODE_VERSION=$(node --version)
-        info "Node.js $NODE_VERSION"
-
-        # npm paketlar
-        if [ ! -d "node_modules" ]; then
-            info "npm paketlar o'rnatilmoqda..."
-            npm install -q
-            success "npm paketlar o'rnatildi"
-        else
-            info "node_modules mavjud, o'tkazib yuborildi"
-        fi
-
-        # Build qilish
-        if [ -d "dist" ]; then
-            DIST_AGE=$(find dist -name "index.html" -newer package.json 2>/dev/null | wc -l)
-            if [ "$DIST_AGE" -gt "0" ]; then
-                info "dist/ yangi, qayta build qilinmadi"
-            else
-                info "dist/ eski, qayta build qilinmoqda..."
-                npm run build -q
-                success "React app qurildi (dist/)"
-            fi
-        else
-            info "dist/ yo'q, build qilinmoqda..."
-            npm run build -q
-            success "React app qurildi (dist/)"
-        fi
-    fi
-
-    cd "$SCRIPT_DIR"
-fi
+step "4/6 · React Mini App (O'chirildi)"
+info "Admin panel o'chirilganligi sababli, bu qadam o'tkazib yuborildi."
 
 # =============================================================================
 # QADAM 5: Eski bot va API jarayonlarini to'xtatish
@@ -202,41 +139,34 @@ else
 fi
 
 # =============================================================================
-# QADAM 6: Jarayonlarni ajratilgan holda ishga tushirish (SPOF oldini olish)
+# QADAM 6: Kombinatsiyalangan Bot va Web API ni ishga tushirish
 # =============================================================================
-step "6/6 · Bot va API Serverlarni ishga tushirish"
+step "6/6 · Bot va Web API-ni ishga tushirish"
 
 # Log fayllari
 LOG_DIR="logs"
 mkdir -p "$LOG_DIR"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BOT_LOG_FILE="$LOG_DIR/bot_${TIMESTAMP}.log"
-API_LOG_FILE="$LOG_DIR/api_${TIMESTAMP}.log"
 
-info "Bot Log: $BOT_LOG_FILE"
-info "API Log: $API_LOG_FILE"
-info "API PORT: $(grep -E '^PORT=' .env | cut -d'=' -f2 | tr -d '"' || echo '8000')"
+info "Log fayli: $BOT_LOG_FILE"
+info "PORT: $(grep -E '^PORT=' .env | cut -d'=' -f2 | tr -d '"' || echo '8000')"
 
 echo ""
 echo -e "${BOLD}${GREEN}╔══════════════════════════════════════╗${NC}"
 echo -e "${BOLD}${GREEN}║   OpenBudjet Tizimi Ishga Tushdi! 🚀 ║${NC}"
-echo -e "${BOLD}${GREEN}║   (Bot va Web API alohida workerlar) ║${NC}"
+echo -e "${BOLD}${GREEN}║   (Bot va Web API bitta jarayonda)   ║${NC}"
 echo -e "${BOLD}${GREEN}║   To'xtatish uchun: Ctrl+C           ║${NC}"
 echo -e "${BOLD}${GREEN}╚══════════════════════════════════════╝${NC}"
 echo ""
 
-# 1. Bot Polling jarayonini backgroundda ishga tushirish
+# 1. Bot (ichida Web API bilan) jarayonini backgroundda ishga tushirish
 $PYTHON_CMD bot.py > "$BOT_LOG_FILE" 2>&1 &
 BOT_PID=$!
-success "Bot Polling jarayoni boshlandi (PID: $BOT_PID)"
-
-# 2. Web API Server jarayonini backgroundda ishga tushirish
-$PYTHON_CMD api_server.py > "$API_LOG_FILE" 2>&1 &
-API_PID=$!
-success "Web API Server jarayoni boshlandi (PID: $API_PID)"
+success "Bot va API jarayoni boshlandi (PID: $BOT_PID)"
 
 # Exit bo'lganda child processlarni ham o'chirish (Graceful Shutdown)
-trap 'echo -e "\n${YELLOW}[!] Jarayonlar to\x27xtatilmoqda...${NC}"; kill $BOT_PID $API_PID 2>/dev/null || true; exit 0' SIGINT SIGTERM
+trap 'echo -e "\n${YELLOW}[!] Jarayon to\x27xtatilmoqda...${NC}"; kill $BOT_PID 2>/dev/null || true; exit 0' SIGINT SIGTERM
 
-# Loglarni bir vaqtda ekranga ko'rsatib turish
-tail -f "$BOT_LOG_FILE" "$API_LOG_FILE"
+# Loglarni ekranga ko'rsatib turish
+tail -f "$BOT_LOG_FILE"

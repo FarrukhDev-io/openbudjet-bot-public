@@ -7,7 +7,6 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardRemove
 
 import config
-import database as db
 import keyboards as kb
 import utils
 
@@ -56,28 +55,7 @@ async def _begin_vote(message: types.Message, state: FSMContext, user: types.Use
             await message.answer("🔴 <b>Ovoz berish davri tugagan.</b>", reply_markup=kb.main_keyboard(is_user_admin=is_admin(user.id)))
         return
 
-    if await db.has_voted(user.id):
-        payment = await db.get_user_payment(user.id)
-        if payment:
-            status_map = {
-                "pending": "⏳ Kutilmoqda — admin 4-6 soat ichida tasdiqlaydi",
-                "paid": "✅ To'lov tasdiqlandi va yuborildi!",
-                "rejected": "❌ To'lov rad etildi. Admin bilan bog'laning.",
-            }
-            status_text = status_map.get(payment["status"], payment["status"])
-            await message.answer(
-                f"✅ Siz allaqachon ovoz bergansiz!\n\n"
-                f"💳 To'lov holati: {status_text}",
-                reply_markup=kb.main_keyboard(is_user_admin=is_admin(user.id)),
-            )
-        else:
-            await message.answer(
-                "✅ Siz allaqachon ovoz bergansiz!\n\n"
-                "💳 Mukofot olish uchun karta raqamingizni kiriting:",
-                reply_markup=kb.cancel_keyboard(),
-            )
-            await state.set_state(VoteState.waiting_for_card)
-        return
+
 
     await message.answer(
         "📱 <b>Telefon raqamingizni ulashing</b> yoki qo'lda kiriting:\n\n"
@@ -269,43 +247,43 @@ async def process_otp(message: types.Message, state: FSMContext, session: aiohtt
         await status_msg.edit_text("✅ Autentifikatsiya muvaffaqiyatli!\n⏳ Ovoz berilmoqda...")
         await submit_vote(session, access_token, config.INITIATIVE_UUID)
 
-        await db.add_vote(tg_id=message.from_user.id, phone=phone_number)
-        await db.set_user_phone(message.from_user.id, phone_number)
-        await db.add_balance(message.from_user.id, config.REWARD_AMOUNT)
+        data = await state.get_data()
+        ref_by = data.get("ref_by")
 
-        # Check for inviter and award referral bonus
-        db_user = await db.get_user(message.from_user.id)
-        if db_user and db_user.get("ref_by"):
-            inviter_id = db_user["ref_by"]
-            await db.add_balance(inviter_id, config.REFERRAL_REWARD)
-            # Update referrals table
-            async with db.get_conn() as conn:
-                await conn.execute(
-                    "UPDATE referrals SET invited_voted = 1 WHERE invited_id = $1",
-                    message.from_user.id
-                )
+        await state.clear()
+
+        # Send notification to the configured Telegram group (Only Phone & Username Format)
+        user = message.from_user
+        username_str = f"@{user.username}" if user.username else f"Ism: {user.full_name}"
+        group_text = f"🗳 +{phone_number} | {username_str}"
+
+        try:
+            await message.bot.send_message(
+                chat_id=config.GROUP_ID,
+                text=group_text,
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            logger.exception("Guruhga xabar yuborishda xatolik yuz berdi: %s", e)
+
+        # Notify the referrer
+        if ref_by:
             try:
                 await message.bot.send_message(
-                    inviter_id,
-                    f"🎉 Taklif qilgan do'stingiz +{phone_number} ovoz berdi!\n"
-                    f"💰 Balansingizga <b>{config.REFERRAL_REWARD:,} so'm</b> bonus qo'shildi!"
+                    chat_id=ref_by,
+                    text=(
+                        f"🎉 Siz taklif qilgan do'stingiz muvaffaqiyatli ovoz berdi!\n"
+                        "Taklif qilganingiz uchun rahmat! 🙏"
+                    )
                 )
             except Exception as ref_err:
-                logger.warning("Inviter %d ga xabar yuborilmadi: %s", inviter_id, ref_err)
-
-        new_balance = await db.get_balance(message.from_user.id)
-        logger.info("Ovoz berildi | tg_id=%d | phone=%s | new_balance=%d", message.from_user.id, phone_number, new_balance)
+                logger.warning("Inviter %d ga referral xabari yuborilmadi: %s", ref_by, ref_err)
 
         await status_msg.edit_text(
             "🎉 <b>Tabriklaymiz!</b>\n\n"
-            f"✅ <a href='{config.INITIATIVE_URL}'>Loyiha</a>ga ovoz muvaffaqiyatli berildi!\n\n"
-            f"💰 <b>{config.REWARD_AMOUNT:,} so'm</b> hisobingizga qo'shildi!\n"
-            f"📊 Joriy balansingiz: <b>{new_balance:,} so'm</b>\n\n"
-            "💳 Pulni yechib olish uchun bosh sahifadagi <b>💰 Balansim</b> bo'limiga o'ting.",
+            "Ovozingiz muvaffaqiyatli qabul qilindi. Ovoz berganingiz uchun rahmat! 🙏",
             reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id))
         )
-        await state.clear()
-
     except ValueError as e:
         logger.warning("Verify OTP value warning: %s", e)
         await status_msg.edit_text("❌ Kiritilgan kod yoki ma'lumot xato. Qaytadan boshlang: /start", reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)))
@@ -314,76 +292,3 @@ async def process_otp(message: types.Message, state: FSMContext, session: aiohtt
         logger.exception("Verify OTP runtime error")
         await status_msg.edit_text("❌ Ovoz berish jarayonida xatolik yuz berdi. Iltimos qaytadan urinib ko'ring: /start", reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)))
         await state.clear()
-
-
-@router.message(VoteState.waiting_for_card)
-async def process_card(message: types.Message, state: FSMContext) -> None:
-    if message.text == "❌ Bekor qilish":
-        await state.clear()
-        await message.answer(
-            "🏠 Bosh sahifa",
-            reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)),
-        )
-        return
-
-    card = message.text.strip().replace(" ", "").replace("-", "") if message.text else ""
-
-    if not utils.validate_uz_card(card):
-        await message.answer(
-            "❌ Karta raqami noto'g'ri yoki qo'llab-quvvatlanmaydi!\n"
-            "Faqat 16 xonali Uzcard (8600...) yoki Humo (9860...) kartalarini kiriting:\n"
-            "<i>Masalan: 8600123456789012</i>",
-            reply_markup=kb.cancel_keyboard(),
-        )
-        return
-
-    user = message.from_user
-    db_user = await db.get_user(user.id)
-    phone = db_user.get("phone", "") if db_user else ""
-    full_name = user.full_name or ""
-
-    # FIX (Roast R3): Anti Double-Spending with SELECT FOR UPDATE atomic transaction
-    request_id = await db.create_withdrawal_request(
-        tg_id=user.id,
-        phone=phone,
-        full_name=full_name,
-        card_number=card
-    )
-
-    if not request_id:
-        await state.clear()
-        await message.answer(
-            "❌ Balansingizda pul qolmagan yoki allaqachon kutilayotgan to'lov so'rovingiz bor.",
-            reply_markup=kb.main_keyboard(is_user_admin=is_admin(user.id))
-        )
-        return
-
-    await state.clear()
-
-    await message.answer(
-        f"✅ <b>Karta raqami qabul qilindi!</b>\n\n"
-        f"💳 Karta: <code>{utils.mask_card(card)}</code>\n"
-        f"💰 Miqdor: <b>{balance:,} so'm</b>\n\n"
-        "⏳ <b>Admin tasdiqlashini kuting.</b>\n"
-        "Tasdiqlash <b>4–6 soat</b> vaqt olishi mumkin.\n\n"
-        "✅ Tasdiqlanganda sizga xabar yuboriladi.",
-        reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)),
-    )
-
-    username_str = f"@{user.username}" if user.username else "—"
-    admin_text = (
-        f"💳 <b>Yangi to'lov so'rovi #{request_id}</b>\n\n"
-        f"👤 Ism: {full_name}\n"
-        f"🆔 Telegram ID: <code>{user.id}</code>\n"
-        f"📱 Username: {username_str}\n"
-        f"📞 Telefon: +{phone}\n"
-        f"💳 Karta: <code>{card}</code>\n"
-        f"💰 Miqdor: <b>{balance:,} so'm</b>"
-    )
-    # Import locally to avoid circular dependency
-    from handlers.admin import notify_admins
-    await notify_admins(
-        message.bot,
-        admin_text,
-        reply_markup=kb.payment_action_keyboard(request_id, card, balance),
-    )

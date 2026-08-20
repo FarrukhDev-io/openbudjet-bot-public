@@ -7,7 +7,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 import config
-import database as db
 import keyboards as kb
 from utils.helpers import is_admin
 
@@ -47,23 +46,15 @@ async def get_initiative_image(session: aiohttp.ClientSession, file_id: str) -> 
 async def cmd_start(message: types.Message, state: FSMContext) -> None:
     await state.clear()
     user = message.from_user
-    ref_by = None
 
     args = message.text.split()
     if len(args) > 1 and args[1].startswith("ref_"):
         try:
             ref_by = int(args[1][4:])
+            await state.update_data(ref_by=ref_by)
+            logger.info("Foydalanuvchi %d referral orqali kirdi. Taklif etuvchi: %d", user.id, ref_by)
         except ValueError:
             pass
-
-    await db.add_user(
-        tg_id=user.id,
-        username=user.username or "",
-        full_name=user.full_name or "",
-        ref_by=ref_by,
-    )
-    if ref_by:
-        await db.add_referral(inviter_id=ref_by, invited_id=user.id)
 
     user_is_admin = is_admin(user.id)
     keyboard = kb.main_keyboard(is_user_admin=user_is_admin)
@@ -111,66 +102,13 @@ async def cmd_help(message: types.Message) -> None:
 
 @router.message(F.text == "💰 Balansim")
 async def cmd_balance(message: types.Message) -> None:
-    user_id = message.from_user.id
-    balance = await db.get_balance(user_id)
-    payment = await db.get_user_payment(user_id)
-
-    if payment:
-        status_map = {
-            "pending": "⏳ To'lov kutilmoqda",
-            "paid": "✅ To'lov amalga oshirildi",
-            "rejected": f"❌ Rad etildi: {payment.get('admin_note', '') or ''}",
-        }
-        payment_status = status_map.get(payment["status"], payment["status"])
-        payment_text = (
-            f"\n\n💳 <b>So'nggi to'lov:</b>\n"
-            f"  Karta: <code>{payment['card_number'][:4]} **** **** {payment['card_number'][-4:]}</code>\n"
-            f"  Holat: {payment_status}"
-        )
-    else:
-        payment_text = "\n\n💳 Hali to'lov so'rovi yo'q"
-
-    text = (
-        f"💰 <b>Hisobingiz</b>\n\n"
-        f"📊 Joriy balans: <b>{balance:,} so'm</b>\n"
-        f"🎁 Ovoz uchun mukofot: <b>{config.REWARD_AMOUNT:,} so'm</b>"
-        f"{payment_text}"
+    await message.answer(
+        "💰 <b>Hisobingiz</b>\n\n"
+        "📊 Joriy balans: <b>0 so'm</b>\n"
+        f"🎁 Ovoz uchun mukofot: <b>{config.REWARD_AMOUNT:,} so'm</b>\n\n"
+        "💳 Hali to'lov so'rovi yo'q",
+        reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)),
     )
-
-    if balance > 0:
-        await message.answer(text, reply_markup=kb.withdraw_inline_keyboard())
-    else:
-        await message.answer(text, reply_markup=kb.main_keyboard(is_user_admin=is_admin(user_id)))
-
-
-@router.callback_query(F.data == "request_withdraw")
-async def callback_request_withdraw(callback: types.CallbackQuery, state: FSMContext) -> None:
-    await callback.answer()
-    user_id = callback.from_user.id
-    balance = await db.get_balance(user_id)
-
-    if balance <= 0:
-        await callback.message.answer("❌ Sizning balansingizda mablag' yo'q.")
-        return
-
-    payment = await db.get_user_payment(user_id)
-    if payment and payment["status"] == "pending":
-        await callback.message.answer(
-            "❌ Sizda kutilayotgan to'lov so'rovi bor. "
-            "U to'langandan so'ng qayta urinib ko'ring."
-        )
-        return
-
-    from handlers.vote import VoteState
-    await state.set_state(VoteState.waiting_for_card)
-    await callback.message.answer(
-        "💳 <b>Pul yechib olish</b>\n\n"
-        f"Yechib olinadigan summa: <b>{balance:,} so'm</b>\n\n"
-        "Pullarni yechish uchun 16 xonali Uzcard yoki Humo karta raqamingizni yuboring:",
-        reply_markup=kb.cancel_keyboard()
-    )
-
-
 @router.message(F.text == "📞 Bog'lanish")
 async def cmd_contact(message: types.Message) -> None:
     admin_tg = config.ADMIN_TELEGRAM.lstrip("@")
@@ -245,16 +183,12 @@ async def cmd_initiative_info(message: types.Message, session: aiohttp.ClientSes
 @router.message(F.text == "👥 Referral")
 async def cmd_referral(message: types.Message) -> None:
     bot_info = await message.bot.get_me()
-    link = db.get_referral_link(message.from_user.id, bot_info.username)
-    stats = await db.get_referral_stats(message.from_user.id)
+    link = f"https://t.me/{bot_info.username}?start=ref_{message.from_user.id}"
 
     await message.answer(
         "👥 <b>Referral tizimi</b>\n\n"
-        f"Do'stlaringizni taklif qiling va statistikangizni kuzating!\n\n"
-        f"📊 <b>Sizning statistikangiz:</b>\n"
-        f"👤 Taklif qilganlar: <b>{stats['total']} kishi</b>\n"
-        f"✅ Ovoz berganlar: <b>{stats['voted']} kishi</b>\n\n"
-        f"🔗 <b>Sizning havolangiz:</b>\n"
+        "Do'stlaringizni botga taklif qiling! Har bir muvaffaqiyatli ovoz bergan do'stingiz uchun sizga **5,000 so'm** bonus taqdim etiladi. Ovoz muvaffaqiyatli berilgandan so'ng, to'lov so'rovi guruhga yuboriladi.\n\n"
+        f"🔗 <b>Sizning taklif havolangiz:</b>\n"
         f"<code>{link}</code>\n\n"
         "Ushbu havolani do'stlaringizga yuboring!",
         reply_markup=kb.main_keyboard(is_user_admin=is_admin(message.from_user.id)),

@@ -342,14 +342,35 @@ async def get_stats() -> Dict[str, Any]:
             "SELECT COUNT(*) FROM votes WHERE CAST(voted_at AS DATE) = CURRENT_DATE"
         )
         total_refs = await conn.fetchval("SELECT COUNT(*) FROM referrals")
+        
+        # To'lovlar holati
         pending_pays = await conn.fetchval(
             "SELECT COUNT(*) FROM payment_requests WHERE status = 'pending'"
         )
         paid_count = await conn.fetchval(
             "SELECT COUNT(*) FROM payment_requests WHERE status = 'paid'"
         )
+        rejected_count = await conn.fetchval(
+            "SELECT COUNT(*) FROM payment_requests WHERE status = 'rejected'"
+        )
+        
+        # Summaga oid hisobotlar
         total_paid_sum = await conn.fetchval(
             "SELECT COALESCE(SUM(amount), 0) FROM payment_requests WHERE status = 'paid'"
+        )
+        total_rejected_sum = await conn.fetchval(
+            "SELECT COALESCE(SUM(amount), 0) FROM payment_requests WHERE status = 'rejected'"
+        )
+        total_user_balances = await conn.fetchval(
+            "SELECT COALESCE(SUM(balance), 0) FROM users"
+        )
+        today_paid_sum = await conn.fetchval(
+            "SELECT COALESCE(SUM(amount), 0) FROM payment_requests WHERE status = 'paid' AND CAST(processed_at AS DATE) = CURRENT_DATE"
+        )
+        
+        # Referrallar faolligi
+        active_referrers_count = await conn.fetchval(
+            "SELECT COUNT(DISTINCT inviter_id) FROM referrals"
         )
 
         return {
@@ -360,7 +381,12 @@ async def get_stats() -> Dict[str, Any]:
             "total_refs": total_refs or 0,
             "pending_pays": pending_pays or 0,
             "paid_count": paid_count or 0,
+            "rejected_count": rejected_count or 0,
             "total_paid_sum": total_paid_sum or 0,
+            "total_rejected_sum": total_rejected_sum or 0,
+            "total_user_balances": total_user_balances or 0,
+            "today_paid_sum": today_paid_sum or 0,
+            "active_referrers_count": active_referrers_count or 0,
         }
 
 

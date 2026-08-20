@@ -18,17 +18,10 @@ def main_keyboard(is_user_admin: bool = False) -> ReplyKeyboardMarkup:
         KeyboardButton(text="💰 Balansim"),
         KeyboardButton(text="👥 Referral"),
     )
-    if is_user_admin:
-        builder.row(
-            KeyboardButton(text="📞 Bog'lanish"),
-            KeyboardButton(text="⚙️ Admin panel"),
-            KeyboardButton(text="ℹ️ Yordam"),
-        )
-    else:
-        builder.row(
-            KeyboardButton(text="📞 Bog'lanish"),
-            KeyboardButton(text="ℹ️ Yordam"),
-        )
+    builder.row(
+        KeyboardButton(text="📞 Bog'lanish"),
+        KeyboardButton(text="ℹ️ Yordam"),
+    )
     return builder.as_markup(resize_keyboard=True)
 
 
