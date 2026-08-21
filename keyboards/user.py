@@ -38,14 +38,31 @@ def cancel_keyboard() -> ReplyKeyboardMarkup:
     return builder.as_markup(resize_keyboard=True)
 
 
-def initiative_inline_keyboard() -> InlineKeyboardMarkup:
+def vote_options_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="🌐 Saytda ko'rish", url=config.INITIATIVE_URL))
-    builder.row(InlineKeyboardButton(text="🗳 Ovoz berish", callback_data="start_vote"))
+    builder.row(
+        InlineKeyboardButton(
+            text="⚡ Rasmiy Botda ovoz berish (Oson & Tez)",
+            url=f"https://t.me/openbudget_official_2_bot?start={config.INITIATIVE_PUB_ID}"
+        )
+    )
+    builder.row(
+        InlineKeyboardButton(
+            text="🌐 Saytda ko'rish va ovoz berish",
+            url=config.INITIATIVE_URL
+        )
+    )
     return builder.as_markup()
+
+
+def initiative_inline_keyboard() -> InlineKeyboardMarkup:
+    return vote_options_keyboard()
 
 
 def withdraw_inline_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(text="📤 Pulni yechib olish", callback_data="request_withdraw"))
     return builder.as_markup()
+
+
+

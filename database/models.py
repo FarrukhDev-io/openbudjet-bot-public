@@ -40,21 +40,28 @@ def db_retry_on_deadlock(max_retries: int = 3, initial_backoff: float = 0.1):
 
 async def get_config(key: str, default: Optional[str] = None) -> Optional[str]:
     """Konfiguratsiya qiymatini olish"""
-    async with get_conn() as conn:
-        val = await conn.fetchval("SELECT value FROM config WHERE key = $1", key)
-        return val if val is not None else default
+    try:
+        async with get_conn() as conn:
+            val = await conn.fetchval("SELECT value FROM config WHERE key = $1", key)
+            return val if val is not None else default
+    except Exception as e:
+        logger.warning("get_config xatosi (%s): %s", key, e)
+        return default
 
 
 # FIX (Roast R4): Anti-Deadlock Retry Logic
 @db_retry_on_deadlock(max_retries=3)
 async def set_config(key: str, value: str) -> None:
     """Konfiguratsiya qiymatini saqlash/yangilash"""
-    async with get_conn() as conn:
-        await conn.execute(
-            """INSERT INTO config (key, value) VALUES ($1, $2)
-               ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value""",
-            key, value
-        )
+    try:
+        async with get_conn() as conn:
+            await conn.execute(
+                """INSERT INTO config (key, value) VALUES ($1, $2)
+                   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value""",
+                key, value
+            )
+    except Exception as e:
+        logger.warning("set_config xatosi (%s): %s", key, e)
 
 
 # ==============================================================================

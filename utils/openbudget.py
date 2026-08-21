@@ -66,9 +66,15 @@ async def send_otp(session: aiohttp.ClientSession, phone_number: str, captcha_ke
             await asyncio.sleep(2 ** attempt)
 
 
-async def verify_otp(session: aiohttp.ClientSession, phone_number: str, otp: str) -> Dict[str, Any]:
+async def verify_otp(session: aiohttp.ClientSession, phone_number: str, otp: str, otp_key: str = "") -> Dict[str, Any]:
     """SMS kod (OTP)ni verifikatsiya qilish"""
-    payload = {"phone_number": phone_number, "otp": otp}
+    if len(phone_number) == 9:
+        phone_number = "998" + phone_number
+    payload = {
+        "phone_number": phone_number,
+        "otp_code": otp,
+        "otp_key": otp_key,
+    }
     
     for attempt in range(1, 4):
         try:
@@ -91,7 +97,11 @@ async def submit_vote(session: aiohttp.ClientSession, access_token: str, initiat
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    vote_url = await db.get_config("VOTE_URL")
+    vote_url = None
+    try:
+        vote_url = await db.get_config("VOTE_URL")
+    except Exception as e:
+        logger.warning("DB config olinmadi: %s", e)
     
     if vote_url:
         payload = {"initiative_id": initiative_uuid}
@@ -133,19 +143,29 @@ async def submit_vote(session: aiohttp.ClientSession, access_token: str, initiat
                     if resp.status in (200, 201):
                         error_msg = last_body.get("message", "") if isinstance(last_body, dict) else ""
                         if "already" in error_msg.lower() or "voted" in error_msg.lower() or last_body.get("status") == "ERROR":
-                            await db.set_config("VOTE_URL", url)
+                            try:
+                                await db.set_config("VOTE_URL", url)
+                            except Exception:
+                                pass
                             raise ValueError("Siz allaqachon bu loyihaga ovoz bergansiz!")
-                        await db.set_config("VOTE_URL", url)
+                        try:
+                            await db.set_config("VOTE_URL", url)
+                        except Exception:
+                            pass
                         return last_body
                     if resp.status == 401:
                         raise ValueError("Token yaroqsiz. /start bosing.")
                     if resp.status in (400, 422):
                         error_msg = last_body.get("message", "") if isinstance(last_body, dict) else ""
                         if "already" in error_msg.lower() or "voted" in error_msg.lower():
-                            await db.set_config("VOTE_URL", url)
+                            try:
+                                await db.set_config("VOTE_URL", url)
+                            except Exception:
+                                pass
                             raise ValueError("Siz allaqachon bu loyihaga ovoz bergansiz!")
                         continue
             except (aiohttp.ClientError, asyncio.TimeoutError):
+                continue
                 continue
     raise ValueError(
         "⚠️ Ovoz berish endpointi aniqlanmadi.\n"

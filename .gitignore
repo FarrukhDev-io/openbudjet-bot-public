@@ -4,3 +4,9 @@ __pycache__/
 *.pyc
 venv/
 venv_bot/
+.venv/
+scratch/
+logs/
+.tempmediaStorage/
+.user_uploaded/
+

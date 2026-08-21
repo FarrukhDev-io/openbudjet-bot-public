@@ -164,19 +164,19 @@ async def cmd_initiative_info(message: types.Message, session: aiohttp.ClientSes
                     else:
                         media_group.append(types.InputMediaPhoto(media=photo))
                 await message.answer_media_group(media=media_group)
-                await message.answer("👇", reply_markup=kb.initiative_inline_keyboard())
+                await message.answer("👇 Ovoz berish variantlari:", reply_markup=kb.vote_options_keyboard())
                 return
             except Exception as img_err:
                 logger.warning("Rasm yuklanmadi: %s", img_err)
-        await message.answer(text, reply_markup=kb.initiative_inline_keyboard())
+        await message.answer(text, reply_markup=kb.vote_options_keyboard())
     except Exception as e:
         logger.exception("Initiative info error")
         await msg.edit_text(
-            f"📌 <b>Loyiha:</b> Attaron kishlog'ini asfaltlashtirish\n"
+            f"📌 <b>Loyiha:</b> Attaron qishlog'ini asfaltlashtirish\n"
             f"🔑 ID: <code>{config.INITIATIVE_PUB_ID}</code>\n"
-            f"🌐 <a href='{config.INITIATIVE_URL}'>Saytda ko'rish</a>\n\n"
-            f"❌ Ma'lumot yuklanmadi. Iltimos keyinroq qayta urinib ko'ring.",
-            reply_markup=kb.initiative_inline_keyboard(),
+            f"📍 Buxoro viloyati, Romitan tumani, Attaron MFY\n\n"
+            f"👇 <b>Ovoz berish uchun quyidagi tugmalardan birini tanlang:</b>",
+            reply_markup=kb.vote_options_keyboard(),
         )
 
 
